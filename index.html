@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tareas Semanales — Unidad 3.4: Los organismos y el ambiente</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Firebase compat SDK (simpler, no module scope issues) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyB7AMIGXxRUCZxuGghRkkc8-iSSxpMOKsU",
+    authDomain: "tareas-organismos.firebaseapp.com",
+    projectId: "tareas-organismos",
+    storageBucket: "tareas-organismos.firebasestorage.app",
+    messagingSenderId: "16309300432",
+    appId: "1:16309300432:web:58a9c819470b871997c2d5"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  // ── Listen for lock changes in real-time ──
+  db.collection('configuracion').doc('candados').onSnapshot((snap) => {
+    const states = snap.exists ? snap.data() : {};
+    ['lunes','martes','miercoles','jueves','viernes'].forEach(day => {
+      const unlocked = states[day] === true;
+      const lock = document.getElementById('lock-'+day);
+      const card = document.getElementById('card-'+day);
+      if(!lock || !card) return;
+      if(unlocked) {
+        lock.style.display = 'none';
+        card.classList.add('open');
+      } else {
+        lock.style.display = 'flex';
+        card.classList.remove('open');
+      }
+    });
+  });
+
+  // ── Save submission ──
+  window.saveToFirebase = async function(payload) {
+    try {
+      showToast('saving');
+      await db.collection('tareas_3_4').add({
+        ...payload,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        fechaEntrega: new Date().toLocaleString('es-PR', {timeZone:'America/Puerto_Rico'}),
+        unidad: "3.4 - Los organismos y el ambiente"
+      });
+      showToast('success');
+      return true;
+    } catch(e) {
+      console.error(e);
+      showToast('error');
+      return false;
+    }
+  };
+</script>
+    } catch(e) {
+      listEl.innerHTML = '<div style="padding:20px;text-align:center;color:#d93025">❌ Error cargando datos. Asegúrate de estar en GitHub Pages, no en archivo local.</div>';
+    }
+  };
+
+  // Group by student name and show list
+  function renderStudentList(docs) {
+    const listEl = document.getElementById('studentList');
+    if (!docs.length) {
+      listEl.innerHTML = '<div style="padding:24px;text-align:center;color:#9aa0a6">📭 No hay entregas aún.</div>';
+      return;
+    }
+    // Group by nombre
+    const byStudent = {};
+    docs.forEach(d => {
+      const name = d.nombre || 'Sin nombre';
+      if (!byStudent[name]) byStudent[name] = [];
+      byStudent[name].push(d);
+    });
+    const DAY_COLORS = {Lunes:'#1a73e8',Martes:'#0f9d58','Miércoles':'#e6a817',Jueves:'#e8711a',Viernes:'#9334e6'};
+    const DAY_ICONS = {Lunes:'📘',Martes:'📗','Miércoles':'📙',Jueves:'📒',Viernes:'📓'};
+    listEl.innerHTML = Object.entries(byStudent).map(([name, tasks]) => {
+      const chips = tasks.map(t => `<span style="background:${DAY_COLORS[t.dia]||'#9aa0a6'}22;color:${DAY_COLORS[t.dia]||'#9aa0a6'};border:1px solid ${DAY_COLORS[t.dia]||'#9aa0a6'};padding:2px 10px;border-radius:20px;font-size:.72rem;font-weight:700">${DAY_ICONS[t.dia]||'📄'} ${t.dia}</span>`).join(' ');
+      return `<div class="student-row" onclick="showStudentDetail('${encodeURIComponent(name)}')">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:40px;height:40px;border-radius:50%;background:#e8f0fe;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">👤</div>
+          <div>
+            <div style="font-weight:700;font-size:.95rem">${name}</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">${chips}</div>
+          </div>
+        </div>
+        <div style="font-size:.78rem;color:#9aa0a6;font-weight:600">${tasks.length} entrega${tasks.length>1?'s':''} →</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Show all tasks for a student
+  window.showStudentDetail = function(encodedName) {
+    const name = decodeURIComponent(encodedName);
+    const tasks = allDocs.filter(d => (d.nombre||'Sin nombre') === name);
+    const detailEl = document.getElementById('studentDetail');
+    const DAY_COLORS = {Lunes:'#1a73e8',Martes:'#0f9d58','Miércoles':'#e6a817',Jueves:'#e8711a',Viernes:'#9334e6'};
+    const maxOpen = {Lunes:4, Martes:4, 'Miércoles':0, Jueves:4, Viernes:8};
+
+    detailEl.style.display = 'block';
+    document.getElementById('detailName').textContent = name;
+    document.getElementById('detailCards').innerHTML = tasks.map(t => `
+      <div class="detail-card">
+        <div class="detail-card-header" style="background:${DAY_COLORS[t.dia]||'#9aa0a6'}">
+          <span style="font-size:1.1rem">${{Lunes:'📘',Martes:'📗','Miércoles':'📙',Jueves:'📒',Viernes:'📓'}[t.dia]||'📄'}</span>
+          <strong>${t.dia}</strong>
+          <span style="margin-left:auto;font-size:.78rem;opacity:.85">${t.fechaEntrega||''}</span>
+        </div>
+        <div class="detail-card-body">
+          <div class="detail-row">
+            <span class="detail-label">📊 Puntuación automática</span>
+            <span class="score-chip">${t.puntuacionAutomatica||'0'} / ${t.puntuacionMaximaAuto||'—'} pts</span>
+          </div>
+          <div class="detail-row" style="align-items:flex-start;flex-direction:column;gap:6px">
+            <span class="detail-label">✏️ Respuesta abierta</span>
+            <div class="open-answer-box">${t.respuestaAbierta || '<em style="color:#9aa0a6">Sin respuesta</em>'}</div>
+          </div>
+          ${maxOpen[t.dia] > 0 ? `
+          <div class="detail-row" style="align-items:center;gap:10px;flex-wrap:wrap">
+            <span class="detail-label">🎯 Nota pregunta abierta (máx. ${maxOpen[t.dia]} pts)</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="number" min="0" max="${maxOpen[t.dia]}" placeholder="0" class="grade-input-big" id="grade-${t.id}" value="${t.notaAbierta||''}">
+              <button class="save-grade-btn" onclick="saveGrade('${t.id}', '${t.dia}', ${maxOpen[t.dia]})">💾 Guardar nota</button>
+              <span class="grade-saved" id="saved-${t.id}" style="display:none;color:#0f9d58;font-size:.78rem;font-weight:700">✅ Guardado</span>
+            </div>
+          </div>` : '<div style="font-size:.78rem;color:#9aa0a6;font-style:italic">Este día no tiene pregunta abierta.</div>'}
+          <div class="detail-row" style="margin-top:8px;padding-top:8px;border-top:1px solid #e8eaed">
+            <span class="detail-label">🏆 Puntuación total</span>
+            <span style="font-weight:900;font-size:1rem;color:${DAY_COLORS[t.dia]||'#333'}" id="total-${t.id}">${calcTotal(t)} pts</span>
+          </div>
+        </div>
+      </div>`).join('');
+
+    detailEl.scrollIntoView({behavior:'smooth', block:'start'});
+  };
+
+  function calcTotal(t) {
+    const auto = parseInt(t.puntuacionAutomatica)||0;
+    const open = parseInt(t.notaAbierta)||0;
+    return auto + open;
+  }
+
+  // Save grade to Firestore
+  window.saveGrade = async function(docId, dia, maxOpen) {
+    const input = document.getElementById('grade-'+docId);
+    const val = parseInt(input.value);
+    if(isNaN(val) || val < 0 || val > maxOpen) {
+      alert(`⚠️ Ingresa un número entre 0 y ${maxOpen}`);
+      return;
+    }
+    try {
+      const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+      await updateDoc(doc(db, "tareas_3_4", docId), { notaAbierta: val });
+      document.getElementById('saved-'+docId).style.display='inline';
+      setTimeout(()=>{ document.getElementById('saved-'+docId).style.display='none'; }, 3000);
+      // Update total display
+      const totalEl = document.getElementById('total-'+docId);
+      const docData = allDocs.find(d=>d.id===docId);
+      if(docData && totalEl) {
+        docData.notaAbierta = val;
+        totalEl.textContent = calcTotal(docData) + ' pts';
+      }
+    } catch(e) {
+      alert('❌ Error guardando nota. Verifica conexión.');
+    }
+  };
+
+  function showToast(status) {
+    const el = document.getElementById('toast');
+    if (!el) return;
+    const cfg = {
+      saving: {msg:'💾 Guardando en Firebase...', bg:'#e8f0fe', color:'#1a73e8'},
+      success: {msg:'✅ ¡Evidencia guardada!', bg:'#e6f4ea', color:'#0f9d58'},
+      error:   {msg:'❌ Error al guardar. Revisa tu conexión.', bg:'#fce8e6', color:'#d93025'}
+    };
+    const c = cfg[status];
+    el.textContent = c.msg;
+    el.style.background = c.bg;
+    el.style.color = c.color;
+    el.classList.add('show');
+    if (status !== 'saving') setTimeout(()=>el.classList.remove('show'), 4000);
+  }
+</script>
+
+<style>
+:root {
+  --lunes:     #1a73e8; --lunes-light:     #e8f0fe;
+  --martes:    #0f9d58; --martes-light:    #e6f4ea;
+  --miercoles: #e6a817; --miercoles-light: #fef9e0;
+  --jueves:    #e8711a; --jueves-light:    #fef0e0;
+  --viernes:   #9334e6; --viernes-light:   #f3e8fd;
+  --maestro:   #d93025; --maestro-light:   #fce8e6;
+  --gray-50:#f8f9fa; --gray-100:#f1f3f4; --gray-200:#e8eaed;
+  --gray-400:#9aa0a6; --gray-600:#5f6368; --text:#202124;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Poppins',sans-serif;background:#f0f2f5;color:var(--text);min-height:100vh}
+
+/* HEADER */
+.site-header{background:white;border-bottom:3px solid var(--gray-200);padding:16px 24px;position:sticky;top:0;z-index:200;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
+.site-header h1{font-family:'Nunito',sans-serif;font-size:1.2rem;font-weight:900}
+.site-header h1 span{color:var(--lunes)}
+.header-sub{font-size:0.75rem;color:var(--gray-600);margin-top:2px}
+.fb-badge{display:inline-flex;align-items:center;gap:4px;background:#fff3e0;border:1px solid #ff9800;color:#e65100;font-size:0.72rem;font-weight:700;padding:2px 10px;border-radius:20px;margin-left:8px}
+.maestro-btn{background:var(--maestro);color:white;border:none;padding:9px 18px;border-radius:20px;font-family:'Poppins',sans-serif;font-size:0.8rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s}
+.maestro-btn:hover{background:#b71c1c;transform:translateY(-1px)}
+
+/* MAIN */
+.main{max-width:880px;margin:0 auto;padding:28px 18px}
+
+/* DAY CARDS */
+.day-card{background:white;border-radius:16px;margin-bottom:20px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.07);border:1px solid var(--gray-200);position:relative}
+.day-header{padding:18px 24px;display:flex;align-items:center;gap:14px}
+.day-icon{font-size:1.8rem;width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.day-title{flex:1}
+.day-title h2{font-family:'Nunito',sans-serif;font-size:1.1rem;font-weight:900}
+.day-title p{font-size:0.78rem;color:var(--gray-600);margin-top:2px}
+.day-badge{font-size:0.72rem;font-weight:700;padding:4px 12px;border-radius:20px}
+
+/* LOCK */
+.lock-screen{position:absolute;inset:0;background:rgba(248,249,250,0.97);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;z-index:10;border-radius:16px}
+.lock-screen .lock-ico{font-size:2.8rem}
+.lock-screen p{font-size:0.88rem;color:var(--gray-600);font-weight:600}
+.lock-screen small{font-size:0.75rem;color:var(--gray-400)}
+
+/* CONTENT */
+.day-content{display:none;padding:0 24px 24px}
+.day-card.open .day-content{display:block}
+
+/* STUDENT INFO */
+.student-info{display:flex;gap:14px;margin-bottom:20px;padding:12px 16px;background:var(--gray-50);border-radius:10px;border:1px solid var(--gray-200);flex-wrap:wrap}
+.s-field{flex:1;min-width:140px}
+.s-field label{font-size:0.72rem;font-weight:700;color:var(--gray-600);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+.s-field input{width:100%;border:none;border-bottom:2px solid var(--gray-200);background:transparent;font-family:'Poppins',sans-serif;font-size:0.85rem;padding:4px 6px;outline:none;transition:border-color .2s}
+.s-field input:focus{border-color:var(--lunes)}
+.s-field input[type="date"]{cursor:pointer}
+
+/* CONCEPT BOX */
+.concept-box{border-left:4px solid;border-radius:0 10px 10px 0;padding:12px 16px;margin-bottom:18px;font-size:0.88rem;line-height:1.6}
+
+/* SECTION */
+.section{margin-bottom:24px}
+.section-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:9px 14px;border-radius:10px;border-left:5px solid}
+.section-header h3{font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:800;flex:1}
+.section-header .pts{font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px;background:white;white-space:nowrap}
+
+/* QUESTION */
+.question{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:12px;padding:16px 18px;margin-bottom:12px}
+.q-label{font-size:.72rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--gray-600);margin-bottom:8px}
+.question p{font-size:.9rem;font-weight:600;margin-bottom:12px;line-height:1.5}
+
+/* SVG IMAGES */
+.q-svg-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:12px}
+.q-svg-item{text-align:center;border:2px solid var(--gray-200);border-radius:10px;padding:8px;background:white;cursor:default}
+.q-svg-item svg{width:100%;height:90px}
+.q-svg-item span{font-size:.75rem;font-weight:700;color:var(--gray-600);display:block;margin-top:4px}
+.q-svg-single{width:100%;border-radius:10px;margin-bottom:12px;border:1px solid var(--gray-200);background:white;padding:8px;text-align:center}
+.q-svg-single svg{max-height:180px;width:100%}
+
+/* MC OPTIONS */
+.mc-options{display:flex;flex-direction:column;gap:8px}
+.mc-option{display:flex;align-items:center;gap:10px;padding:10px 14px;border:2px solid var(--gray-200);border-radius:10px;cursor:pointer;transition:all .2s;font-size:.88rem;background:white;user-select:none}
+.mc-option:hover{border-color:var(--gray-400);background:var(--gray-50)}
+.mc-option input[type="radio"]{display:none}
+.mc-radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--gray-200);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.mc-option.selected .mc-radio{background:currentColor;border-color:currentColor}
+.mc-option.selected .mc-radio::after{content:'✓';color:white;font-size:.65rem;font-weight:900}
+.mc-option.correct{border-color:#0f9d58!important;background:#e6f4ea!important}
+.mc-option.incorrect{border-color:#d93025!important;background:#fce8e6!important}
+
+/* FILL BLANK */
+.fill-sentence{font-size:.9rem;line-height:2.4;margin-bottom:8px}
+.blank-input{display:inline-block;border:none;border-bottom:2px solid var(--gray-400);min-width:130px;font-family:'Poppins',sans-serif;font-size:.88rem;padding:2px 6px;outline:none;background:transparent;text-align:center;transition:border-color .2s;vertical-align:bottom}
+.blank-input:focus{border-color:var(--lunes)}
+
+/* WORD BANK */
+.word-bank{background:white;border:2px dashed var(--gray-200);border-radius:10px;padding:10px 14px;margin-bottom:12px}
+.wb-title{font-size:.72rem;font-weight:700;color:var(--gray-600);margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase}
+.word-chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--gray-100);border:1px solid var(--gray-200);border-radius:20px;padding:4px 14px;font-size:.82rem;font-weight:600;color:var(--gray-600)}
+
+/* DRAG DROP */
+.img-pool{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px;margin-bottom:14px}
+.draggable-card{text-align:center;cursor:grab;border:2px solid var(--gray-200);border-radius:10px;padding:6px;background:white;transition:all .15s;user-select:none}
+.draggable-card:hover{box-shadow:0 4px 12px rgba(0,0,0,0.12);transform:translateY(-2px);border-color:var(--gray-400)}
+.draggable-card.dragging{opacity:.4}
+.draggable-card svg{width:100%;height:72px}
+.draggable-card span{font-size:.72rem;font-weight:700;color:var(--gray-600);display:block;margin-top:4px}
+.drop-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.drop-zone{border:2px dashed var(--gray-200);border-radius:12px;padding:10px;min-height:110px;background:var(--gray-50);transition:all .2s}
+.drop-zone.over{border-color:var(--lunes);background:var(--lunes-light)}
+.drop-zone-label{font-size:.78rem;font-weight:800;margin-bottom:8px;text-align:center;padding:5px;border-radius:6px;color:white}
+.drop-zone-items{display:flex;flex-wrap:wrap;gap:6px}
+.dropped-item{text-align:center;border:1px solid var(--gray-200);border-radius:8px;padding:4px;background:white;cursor:grab}
+.dropped-item svg{width:52px;height:44px}
+.dropped-item span{font-size:.65rem;font-weight:700;color:var(--gray-600);display:block}
+
+/* OPEN TEXTAREA */
+.open-textarea{width:100%;min-height:90px;border:2px solid var(--gray-200);border-radius:10px;padding:10px 12px;font-family:'Poppins',sans-serif;font-size:.88rem;line-height:1.6;resize:vertical;outline:none;transition:border-color .2s;background:white}
+.open-textarea:focus{border-color:var(--lunes)}
+.open-note{font-size:.72rem;color:var(--gray-600);margin-top:6px;font-style:italic}
+
+/* BUTTONS */
+.check-btn{border:none;padding:9px 20px;border-radius:20px;font-family:'Poppins',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;transition:all .2s;margin-top:12px;color:white}
+.check-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+.feedback{font-size:.8rem;font-weight:700;padding:6px 12px;border-radius:8px;margin-top:8px;display:none}
+.feedback.show{display:block}
+.feedback.ok{background:#e6f4ea;color:#0f9d58}
+.feedback.fail{background:#fce8e6;color:#d93025}
+
+/* SCORE BAR */
+.score-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--gray-50);border-top:2px solid var(--gray-200);margin-top:8px}
+.score-display{font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:900}
+.submit-btn{border:none;padding:10px 22px;border-radius:20px;font-family:'Poppins',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;color:white;transition:all .2s}
+.submit-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.submit-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+
+/* COLOR THEMES */
+.lunes .day-header{background:var(--lunes-light)} .lunes .day-icon{background:var(--lunes);color:white} .lunes .day-title h2{color:var(--lunes)} .lunes .day-badge{background:var(--lunes-light);color:var(--lunes)} .lunes .section-header{background:var(--lunes-light);border-color:var(--lunes)} .lunes .section-header h3{color:var(--lunes)} .lunes .section-header .pts{color:var(--lunes);border:1px solid var(--lunes)} .lunes .check-btn{background:var(--lunes)} .lunes .submit-btn{background:var(--lunes)} .lunes .score-display{color:var(--lunes)} .lunes .concept-box{background:var(--lunes-light);border-color:var(--lunes)} .lunes .mc-option.selected{color:var(--lunes)}
+.martes .day-header{background:var(--martes-light)} .martes .day-icon{background:var(--martes);color:white} .martes .day-title h2{color:var(--martes)} .martes .day-badge{background:var(--martes-light);color:var(--martes)} .martes .section-header{background:var(--martes-light);border-color:var(--martes)} .martes .section-header h3{color:var(--martes)} .martes .section-header .pts{color:var(--martes);border:1px solid var(--martes)} .martes .check-btn{background:var(--martes)} .martes .submit-btn{background:var(--martes)} .martes .score-display{color:var(--martes)} .martes .concept-box{background:var(--martes-light);border-color:var(--martes)} .martes .mc-option.selected{color:var(--martes)}
+.miercoles .day-header{background:var(--miercoles-light)} .miercoles .day-icon{background:var(--miercoles);color:white} .miercoles .day-title h2{color:var(--miercoles)} .miercoles .day-badge{background:var(--miercoles-light);color:var(--miercoles)} .miercoles .section-header{background:var(--miercoles-light);border-color:var(--miercoles)} .miercoles .section-header h3{color:var(--miercoles)} .miercoles .section-header .pts{color:var(--miercoles);border:1px solid var(--miercoles)} .miercoles .check-btn{background:var(--miercoles)} .miercoles .submit-btn{background:var(--miercoles)} .miercoles .score-display{color:var(--miercoles)} .miercoles .concept-box{background:var(--miercoles-light);border-color:var(--miercoles)} .miercoles .mc-option.selected{color:var(--miercoles)}
+.jueves .day-header{background:var(--jueves-light)} .jueves .day-icon{background:var(--jueves);color:white} .jueves .day-title h2{color:var(--jueves)} .jueves .day-badge{background:var(--jueves-light);color:var(--jueves)} .jueves .section-header{background:var(--jueves-light);border-color:var(--jueves)} .jueves .section-header h3{color:var(--jueves)} .jueves .section-header .pts{color:var(--jueves);border:1px solid var(--jueves)} .jueves .check-btn{background:var(--jueves)} .jueves .submit-btn{background:var(--jueves)} .jueves .score-display{color:var(--jueves)} .jueves .concept-box{background:var(--jueves-light);border-color:var(--jueves)} .jueves .mc-option.selected{color:var(--jueves)}
+.viernes .day-header{background:var(--viernes-light)} .viernes .day-icon{background:var(--viernes);color:white} .viernes .day-title h2{color:var(--viernes)} .viernes .day-badge{background:var(--viernes-light);color:var(--viernes)} .viernes .section-header{background:var(--viernes-light);border-color:var(--viernes)} .viernes .section-header h3{color:var(--viernes)} .viernes .section-header .pts{color:var(--viernes);border:1px solid var(--viernes)} .viernes .check-btn{background:var(--viernes)} .viernes .submit-btn{background:var(--viernes)} .viernes .score-display{color:var(--viernes)} .viernes .concept-box{background:var(--viernes-light);border-color:var(--viernes)} .viernes .mc-option.selected{color:var(--viernes)}
+
+/* ===== MAESTRO PANEL ===== */
+.maestro-panel{background:white;border-radius:16px;border:3px solid var(--maestro);margin-bottom:24px;overflow:hidden;display:none;box-shadow:0 4px 20px rgba(217,48,37,.15)}
+.maestro-panel.active{display:block}
+.mp-header{background:var(--maestro);color:white;padding:16px 24px;display:flex;align-items:center;gap:12px}
+.mp-header h2{font-family:'Nunito',sans-serif;font-weight:900;font-size:1.1rem;flex:1}
+.mp-close{background:rgba(255,255,255,.2);border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.mp-close:hover{background:rgba(255,255,255,.35)}
+.mp-tabs{display:flex;border-bottom:2px solid var(--gray-200)}
+.mp-tab{flex:1;padding:12px;border:none;background:white;font-family:'Poppins',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;color:var(--gray-600);transition:all .2s;border-bottom:3px solid transparent;margin-bottom:-2px}
+.mp-tab.active{color:var(--maestro);border-color:var(--maestro)}
+.mp-body{padding:20px 24px}
+.mp-section{display:none}
+.mp-section.active{display:block}
+
+/* UNLOCK CONTROLS */
+.unlock-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+.unlock-card{border:2px solid var(--gray-200);border-radius:12px;padding:14px;text-align:center;transition:all .2s}
+.unlock-card .day-name{font-family:'Nunito',sans-serif;font-weight:900;font-size:.95rem;margin:8px 0 4px}
+.unlock-card .day-topic{font-size:.72rem;color:var(--gray-600);margin-bottom:10px}
+.unlock-toggle{width:100%;padding:8px;border:none;border-radius:8px;font-family:'Poppins',sans-serif;font-size:.78rem;font-weight:700;cursor:pointer;transition:all .2s}
+.unlock-toggle.locked{background:var(--gray-100);color:var(--gray-600)}
+.unlock-toggle.unlocked{background:#e6f4ea;color:#0f9d58}
+.unlock-all-btn{width:100%;padding:10px;border:none;border-radius:10px;background:var(--maestro);color:white;font-family:'Poppins',sans-serif;font-weight:700;cursor:pointer;font-size:.85rem;margin-bottom:16px;transition:all .2s}
+.unlock-all-btn:hover{background:#b71c1c}
+
+/* ANSWER KEY */
+.answer-day{margin-bottom:20px;padding-bottom:20px;border-bottom:2px solid var(--gray-200)}
+.answer-day:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.answer-day-title{font-family:'Nunito',sans-serif;font-weight:900;font-size:.95rem;margin-bottom:10px;padding:6px 12px;border-radius:8px;display:inline-block;color:white}
+.answer-row{display:flex;gap:10px;margin-bottom:6px;align-items:flex-start;font-size:.83rem}
+.answer-q{font-weight:700;color:var(--gray-600);min-width:110px;flex-shrink:0}
+.answer-a{color:var(--martes);font-weight:700}
+
+/* REGISTRO NUEVO */
+.student-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border:1px solid var(--gray-200);border-radius:12px;margin-bottom:10px;cursor:pointer;background:white;transition:all .2s}
+.student-row:hover{border-color:var(--maestro);box-shadow:0 2px 10px rgba(217,48,37,.1);transform:translateY(-1px)}
+.student-detail{display:none;margin-top:16px}
+.detail-back{background:none;border:none;color:var(--maestro);font-family:'Poppins',sans-serif;font-weight:700;font-size:.85rem;cursor:pointer;padding:0;margin-bottom:14px;display:flex;align-items:center;gap:6px}
+.detail-back:hover{text-decoration:underline}
+.detail-student-name{font-family:'Nunito',sans-serif;font-weight:900;font-size:1.2rem;margin-bottom:16px}
+.detail-card{border:1px solid var(--gray-200);border-radius:12px;margin-bottom:14px;overflow:hidden}
+.detail-card-header{display:flex;align-items:center;gap:10px;padding:10px 16px;color:white;font-weight:700;font-size:.9rem}
+.detail-card-body{padding:14px 16px}
+.detail-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px}
+.detail-label{font-size:.8rem;font-weight:700;color:var(--gray-600)}
+.open-answer-box{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:10px 12px;font-size:.85rem;line-height:1.6;width:100%;min-height:50px;color:var(--text)}
+.grade-input-big{width:72px;border:2px solid var(--gray-200);border-radius:8px;padding:6px 10px;font-family:'Poppins',sans-serif;font-size:1rem;font-weight:700;outline:none;text-align:center;transition:border-color .2s}
+.grade-input-big:focus{border-color:var(--maestro)}
+.save-grade-btn{background:var(--maestro);color:white;border:none;padding:7px 14px;border-radius:8px;font-family:'Poppins',sans-serif;font-size:.78rem;font-weight:700;cursor:pointer;transition:all .2s}
+.save-grade-btn:hover{background:#b71c1c}
+.refresh-btn{background:var(--lunes);color:white;border:none;padding:8px 18px;border-radius:20px;font-family:'Poppins',sans-serif;font-weight:700;font-size:.8rem;cursor:pointer;margin-bottom:14px;transition:all .2s}
+.refresh-btn:hover{background:#1558b0}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.active{display:flex}
+.modal{background:white;border-radius:20px;padding:32px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.2);text-align:center}
+.modal h3{font-family:'Nunito',sans-serif;font-size:1.3rem;font-weight:900;margin-bottom:8px}
+.modal p{font-size:.85rem;color:var(--gray-600);margin-bottom:18px}
+.modal input[type="password"]{width:100%;border:2px solid var(--gray-200);border-radius:10px;padding:12px 16px;font-family:'Poppins',sans-serif;font-size:1rem;text-align:center;letter-spacing:4px;outline:none;margin-bottom:14px;transition:border-color .2s}
+.modal input[type="password"]:focus{border-color:var(--maestro)}
+.modal-btns{display:flex;gap:10px}
+.modal-cancel{flex:1;padding:12px;border:2px solid var(--gray-200);border-radius:10px;background:white;font-family:'Poppins',sans-serif;font-weight:600;cursor:pointer}
+.modal-ok{flex:1;padding:12px;border:none;border-radius:10px;background:var(--maestro);color:white;font-family:'Poppins',sans-serif;font-weight:700;cursor:pointer}
+.modal-error{color:var(--maestro);font-size:.78rem;margin:-8px 0 10px}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);padding:12px 24px;border-radius:30px;font-family:'Poppins',sans-serif;font-size:.88rem;font-weight:700;box-shadow:0 4px 20px rgba(0,0,0,.15);z-index:9999;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(max-width:600px){.student-info{flex-direction:column}.drop-grid{grid-template-columns:1fr}.unlock-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div>
+    <h1>🌿 <span>Unidad 3.4</span> — Los organismos y el ambiente</h1>
+    <div class="header-sub">Tareas semanales interactivas • Grado 3 <span class="fb-badge">🔥 Firebase</span></div>
+  </div>
+</header>
+
+<div class="toast" id="toast"></div>
+
+<div class="main">
+
+<!-- ===== LUNES ===== -->
+<div class="day-card lunes" id="card-lunes">
+  <div class="day-header">
+    <div class="day-icon">📘</div>
+    <div class="day-title"><h2>LUNES</h2><p>Factores Bióticos y Abióticos</p></div>
+    <span class="day-badge">20 pts</span>
+  </div>
+  <div class="lock-screen" id="lock-lunes">
+    <div class="lock-ico">🔒</div>
+    <p>Tarea bloqueada</p>
+    <small>El maestro desbloqueará esta tarea</small>
+  </div>
+  <div class="day-content">
+    <div class="student-info">
+      <div class="s-field"><label>Nombre completo</label><input type="text" id="nombre-lunes" placeholder="Escribe tu nombre..."></div>
+      <div class="s-field"><label>Fecha</label><input type="date" id="fecha-lunes"></div>
+      <div class="s-field"><label>Grado</label><input type="text" value="3ro" readonly></div>
+    </div>
+    <div class="concept-box" style="border-color:var(--lunes)">
+      <strong>📖 Recuerda:</strong> Los <strong>factores bióticos</strong> son todos los seres vivos (plantas, animales, personas). Los <strong>factores abióticos</strong> son elementos sin vida (agua, sol, aire, suelo, temperatura). La <strong>ecología</strong> estudia cómo estas partes se afectan entre sí.
+    </div>
+
+    <!-- PARTE 1: SM -->
+    <div class="section">
+      <div class="section-header"><span>🔵</span><h3>PARTE 1 — Selección Múltiple</h3><span class="pts">8 pts (2 c/u)</span></div>
+
+      <div class="question">
+        <div class="q-label">Pregunta 1 de 4</div>
+        <!-- SVG: Sol vs árbol -->
+        <div class="q-svg-single">
+          <svg viewBox="0 0 300 120" xmlns="http://www.w3.org/2000/svg">
+            <!-- sky -->
+            <rect width="300" height="120" fill="#e3f2fd" rx="8"/>
+            <!-- sun -->
+            <circle cx="240" cy="40" r="28" fill="#FDD835"/>
+            <line x1="240" y1="5" x2="240" y2="0" stroke="#FDD835" stroke-width="3"/>
+            <line x1="240" y1="75" x2="240" y2="80" stroke="#FDD835" stroke-width="3"/>
+            <line x1="205" y1="40" x2="200" y2="40" stroke="#FDD835" stroke-width="3"/>
+            <line x1="275" y1="40" x2="280" y2="40" stroke="#FDD835" stroke-width="3"/>
+            <line x1="215" y1="15" x2="211" y2="11" stroke="#FDD835" stroke-width="3"/>
+            <line x1="265" y1="65" x2="269" y2="69" stroke="#FDD835" stroke-width="3"/>
+            <line x1="265" y1="15" x2="269" y2="11" stroke="#FDD835" stroke-width="3"/>
+            <line x1="215" y1="65" x2="211" y2="69" stroke="#FDD835" stroke-width="3"/>
+            <!-- ground -->
+            <rect x="0" y="95" width="300" height="25" fill="#4CAF50" rx="0"/>
+            <!-- tree trunk -->
+            <rect x="55" y="60" width="12" height="38" fill="#795548"/>
+            <!-- tree top -->
+            <ellipse cx="61" cy="50" rx="28" ry="30" fill="#2E7D32"/>
+            <ellipse cx="45" cy="60" rx="20" ry="22" fill="#388E3C"/>
+            <ellipse cx="78" cy="62" rx="18" ry="20" fill="#388E3C"/>
+            <!-- bird -->
+            <path d="M140 30 Q148 24 156 30" stroke="#1565C0" stroke-width="2" fill="none"/>
+            <!-- water drop -->
+            <ellipse cx="160" cy="65" rx="8" ry="11" fill="#29B6F6"/>
+            <polygon points="160,50 154,65 166,65" fill="#29B6F6"/>
+            <!-- rock -->
+            <ellipse cx="110" cy="100" rx="18" ry="10" fill="#9E9E9E"/>
+            <ellipse cx="108" cy="97" rx="14" ry="8" fill="#BDBDBD"/>
+          </svg>
+        </div>
+        <p>¿Cuál de los siguientes es un factor <strong>abiótico</strong> del ambiente?</p>
+        <div class="mc-options" id="l-mc1">
+          <label class="mc-option"><input type="radio" name="l-mc1"><span class="mc-radio"></span>a) Un árbol 🌳</label>
+          <label class="mc-option"><input type="radio" name="l-mc1"><span class="mc-radio"></span>b) El sol ☀️</label>
+          <label class="mc-option"><input type="radio" name="l-mc1"><span class="mc-radio"></span>c) Una rana 🐸</label>
+          <label class="mc-option"><input type="radio" name="l-mc1"><span class="mc-radio"></span>d) Un insecto 🐛</label>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="q-label">Pregunta 2 de 4</div>
+        <div class="q-svg-grid">
+          <div class="q-svg-item">
+            <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+              <rect width="80" height="80" fill="#e8f5e9" rx="6"/>
+              <rect x="34" y="48" width="12" height="28" fill="#795548"/>
+              <ellipse cx="40" cy="38" rx="24" ry="26" fill="#2E7D32"/>
+              <ellipse cx="28" cy="48" rx="18" ry="18" fill="#388E3C"/>
+              <ellipse cx="52" cy="50" rx="16" ry="16" fill="#43A047"/>
+            </svg>
+            <span>a) Árbol 🌳</span>
+          </div>
+          <div class="q-svg-item">
+            <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+              <rect width="80" height="80" fill="#fff8e1" rx="6"/>
+              <circle cx="40" cy="40" r="22" fill="#FDD835"/>
+              <line x1="40" y1="8" x2="40" y2="2" stroke="#FDD835" stroke-width="3"/>
+              <line x1="40" y1="72" x2="40" y2="78" stroke="#FDD835" stroke-width="3"/>
+              <line x1="8" y1="40" x2="2" y2="40" stroke="#FDD835" stroke-width="3"/>
+              <line x1="72" y1="40" x2="78" y2="40" stroke="#FDD835" stroke-width="3"/>
+              <line x1="16" y1="16" x2="11" y2="11" stroke="#FDD835" stroke-width="3"/>
+              <line x1="64" y1="64" x2="69" y2="69" stroke="#FDD835" stroke-width="3"/>
+              <line x1="64" y1="16" x2="69" y2="11" stroke="#FDD835" stroke-width="3"/>
+              <line x1="16" y1="64" x2="11" y2="69" stroke="#FDD835" stroke-width="3"/>
+            </svg>
+            <span>b) Sol ☀️</span>
+          </div>
+          <div class="q-svg-item">
+            <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+              <rect width="80" height="80" fill="#e3f2fd" rx="6"/>
+              <ellipse cx="40" cy="55" rx="22" ry="12" fill="#9E9E9E"/>
+              <ellipse cx="38" cy="50" rx="18" ry="10" fill="#BDBDBD"/>
+              <ellipse cx="42" cy="47" rx="14" ry="9" fill="#E0E0E0"/>
+            </svg>
+            <span>c) Roca 🪨</span>
+          </div>
+          <div class="q-svg-item">
+            <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+              <rect width="80" height="80" fill="#e8f5e9" rx="6"/>
+              <ellipse cx="40" cy="48" rx="14" ry="18" fill="#4CAF50"/>
+              <circle cx="40" cy="32" r="12" fill="#66BB6A"/>
+              <circle cx="34" cy="30" r="3" fill="white"/>
+              <circle cx="46" cy="30" r="3" fill="white"/>
+              <circle cx="34" cy="30" r="1.5" fill="#333"/>
+              <circle cx="46" cy="30" r="1.5" fill="#333"/>
+              <path d="M36 38 Q40 42 44 38" stroke="#333" stroke-width="1.5" fill="none"/>
+              <line x1="28" y1="52" x2="20" y2="62" stroke="#4CAF50" stroke-width="3"/>
+              <line x1="52" y1="52" x2="60" y2="62" stroke="#4CAF50" stroke-width="3"/>
+            </svg>
+            <span>d) Rana 🐸</span>
+          </div>
+        </div>
+        <p>De las imágenes, ¿cuál es el <strong>único</strong> factor <strong>abiótico</strong>?</p>
+        <div class="mc-options" id="l-mc2">
+          <label class="mc-option"><input type="radio" name="l-mc2"><span class="mc-radio"></span>a) Árbol 🌳</label>
+          <label class="mc-option"><input type="radio" name="l-mc2"><span class="mc-radio"></span>b) Sol ☀️</label>
+          <label class="mc-option"><input type="radio" name="l-mc2"><span class="mc-radio"></span>c) Roca 🪨</label>
+          <label class="mc-option"><input type="radio" name="l-mc2"><span class="mc-radio"></span>d) Rana 🐸</label>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="q-label">Pregunta 3 de 4</div>
+        <p>Los seres bióticos sin <strong>_____</strong> morirían de sed. Las plantas sin luz del sol no podrían hacer fotosíntesis. ¿Qué factor abiótico completa la oración?</p>
+        <div class="mc-options" id="l-mc3">
+          <label class="mc-option"><input type="radio" name="l-mc3"><span class="mc-radio"></span>a) Suelo 🌱</label>
+          <label class="mc-option"><input type="radio" name="l-mc3"><span class="mc-radio"></span>b) Comida 🍎</label>
+          <label class="mc-option"><input type="radio" name="l-mc3"><span class="mc-radio"></span>c) Agua 💧</label>
+          <label class="mc-option"><input type="radio" name="l-mc3"><span class="mc-radio"></span>d) Temperatura 🌡️</label>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="q-label">Pregunta 4 de 4</div>
+        <p>Un cisne, un árbol y un caracol son seres vivos. ¿Cuál de las siguientes opciones es también un factor <strong>biótico</strong>?</p>
+        <div class="mc-options" id="l-mc4">
+          <label class="mc-option"><input type="radio" name="l-mc4"><span class="mc-radio"></span>a) El clima 🌤️</label>
+          <label class="mc-option"><input type="radio" name="l-mc4"><span class="mc-radio"></span>b) Una mariposa 🦋</label>
+          <label class="mc-option"><input type="radio" name="l-mc4"><span class="mc-radio"></span>c) El viento 💨</label>
+          <label class="mc-option"><input type="radio" name="l-mc4"><span class="mc-radio"></span>d) La temperatura 🌡️</label>
+        </div>
+      </div>
+      <button class="check-btn" onclick="checkMC(['l-mc1','l-mc2','l-mc3','l-mc4'],[1,2,2,1],'fb-l-mc','score-lunes',8)">✔ Verificar</button>
+      <div class="feedback" id="fb-l-mc"></div>
+    </div>
+
+    <!-- PARTE 2: BLANCOS -->
+    <div class="section">
+      <div class="section-header"><span>🔵</span><h3>PARTE 2 — Llenar los blancos</h3><span class="pts">8 pts (2 c/u)</span></div>
+      <div class="word-bank"><div class="wb-title">📦 Banco de palabras</div>
+        <div class="word-chips"><span class="chip">bióticos</span><span class="chip">abióticos</span><span class="chip">biocenosis</span><span class="chip">ecología</span></div>
+      </div>
+      <div class="question">
+        <div class="fill-sentence">1. El aire, el agua y las rocas son factores <input class="blank-input" id="bl-1" placeholder="escribe aquí"> porque no tienen vida.</div>
+        <div class="fill-sentence">2. Las plantas, animales y personas son factores <input class="blank-input" id="bl-2" placeholder="escribe aquí"> porque son seres vivos.</div>
+        <div class="fill-sentence">3. Al conjunto de todos los seres bióticos se le llama <input class="blank-input" id="bl-3" placeholder="escribe aquí">.</div>
+        <div class="fill-sentence">4. La <input class="blank-input" id="bl-4" placeholder="escribe aquí"> estudia cómo las partes vivas y no vivas del ambiente se afectan entre sí.</div>
+        <button class="check-btn" onclick="checkBlanks(['bl-1','bl-2','bl-3','bl-4'],['abióticos','bióticos','biocenosis','ecología'],'fb-l-blanks','score-lunes',8)">✔ Verificar</button>
+        <div class="feedback" id="fb-l-blanks"></div>
+      </div>
+    </div>
+
+    <!-- PARTE 3: ABIERTA -->
+    <div class="section">
+      <div class="section-header"><span>🔵</span><h3>PARTE 3 — Pregunta Abierta</h3><span class="pts">4 pts</span></div>
+      <div class="question">
+        <p>🌿 Escribe un ejemplo de cómo un factor biótico y uno abiótico se afectan entre sí en tu escuela. Usa oraciones completas.</p>
+        <textarea class="open-textarea" id="open-lunes"></textarea>
+        <div class="open-note">⭐ El maestro calificará esta pregunta.</div>
+      </div>
+    </div>
+  </div>
+  <div class="score-bar">
+    <div class="score-display" style="color:var(--lunes)">Puntuación: <span id="score-lunes">0</span> / 16 pts automáticos</div>
+    <button class="submit-btn" onclick="submitDay('lunes','Lunes',16)">Entregar tarea ✅</button>
+  </div>
+</div>
+
+<!-- ===== MARTES ===== -->
+<div class="day-card martes" id="card-martes">
+  <div class="day-header">
+    <div class="day-icon">📗</div>
+    <div class="day-title"><h2>MARTES</h2><p>Tipos de Ecosistemas • Hábitat vs. Ecosistema</p></div>
+    <span class="day-badge">22 pts</span>
+  </div>
+  <div class="lock-screen" id="lock-martes">
+    <div class="lock-ico">🔒</div>
+    <p>Tarea bloqueada</p>
+    <small>El maestro desbloqueará esta tarea</small>
+  </div>
+  <div class="day-content">
+    <div class="student-info">
+      <div class="s-field"><label>Nombre completo</label><input type="text" id="nombre-martes" placeholder="Escribe tu nombre..."></div>
+      <div class="s-field"><label>Fecha</label><input type="date" id="fecha-martes"></div>
+      <div class="s-field"><label>Grado</label><input type="text" value="3ro" readonly></div>
+    </div>
+    <div class="concept-box" style="border-color:var(--martes)">
+      <strong>📖 Recuerda:</strong> Un <strong>ecosistema</strong> es un sistema natural de seres vivos y no vivos que se afectan entre sí. El <strong>hábitat</strong> es el lugar específico donde vive un organismo. Ecosistemas <strong>terrestres</strong>: desierto, bosque, sabana. Ecosistemas <strong>acuáticos</strong>: océano, río, arrecife.
+    </div>
+
+    <!-- ARRASTRAR -->
+    <div class="section">
+      <div class="section-header"><span>🟢</span><h3>PARTE 1 — Clasifica el ecosistema</h3><span class="pts">12 pts (2 c/u)</span></div>
+      <div class="question">
+        <p>🗂 Arrastra cada ecosistema al grupo correcto.</p>
+        <div class="img-pool" id="pool-martes">
+          <div class="draggable-card" draggable="true" data-id="eco1" data-ans="terrestre" ondragstart="onDragStart(event,'eco1')">
+            <svg viewBox="0 0 80 72" xmlns="http://www.w3.org/2000/svg">
+              <rect width="80" height="72" fill="#FFF8E1" rx="6"/>
+              <ellipse cx="40" cy="58" rx="36" ry="10" fill="#D4A04A"/>
+              <ellipse cx="62" cy="32" rx="8" ry="24" fill="#A1887F" opacity=".6"/>
+              <path d="M20 55 Q20 30 30 25 Q35 15 40 25 Q45 15 50 25 Q60 30 60 55Z" fill="#81C784"/>
+              <circle cx="40" cy="20" r="6" fill="#FDD835" opacity=".8"/>
+            </svg>
+            <span>Desierto 🏜️</span>
+          </div>
+          <div class="draggable-card" draggable="true" data-id="eco2" data-ans="acuatico" ondragstart="onDragStart(event,'eco2')">
+            <svg viewBox="0 0 80 72" xmlns="http://www.w3.org/2000/svg">
+              <rect width="80" height="72" fill="#E3F2FD" rx="6"/>
+              <ellipse cx="40" cy="50" rx="36" ry="18" fill="#29B6F6"/>
+              <ellipse cx="25" cy="55" rx="10" ry="6" fill="#FF7043" opacity=".8"/>
+              <ellipse cx="55" cy="48" rx="8" ry="5" fill="#AB47BC" opacity=".7"/>
+              <path d="M15 45 Q25 35 35 45 Q45 35 55 45 Q65 35 75 45" stroke="#80DEEA" stroke-width="3" fill="none"/>
+            </svg>
+            <span>Arrecife 🪸</span>
+          </div>
+          <div class="draggable-card" draggable="true" data-id="eco3" data-ans="terrestre" ondragstart="onDragStart(event,'eco3')">
+            <svg viewBox="0 0 80 72" xmlns="http://www.w3.org/2000/svg">
+              <rect width="80" height="72" fill="#E8F5E9" rx="6"/>
+              <rect x="0" y="50" width="80" height="22" fill="#4CAF50"/>
+              <rect x="35" y="32" width="10" height="22" fill="#795548"/>
+              <ellipse cx="40" cy="22" rx="22" ry="20" fill="#2E7D32"/>
+              <ellipse cx="25" cy="32" rx="16" ry="15" fill="#388E3C"/>
+              <ellipse cx="55" cy="34" rx="15" ry="13" fill="#43A047"/>
+              <rect x="12" y="38" width="8" height="16" fill="#795548"/>
+              <ellipse cx="16" cy="32" rx="10" ry="10" fill="#1B5E20"/>
+            </svg>
+            <span>Bosque 🌲</span>
+          </div>
+          <div class="draggable-card" draggable="true" data-id="eco4" data-ans="acuatico" ondragstart="onDragStart(event,'eco4')">
+            <svg viewBox="0 0 80 72" xmlns="http://www.w3.org/2000/svg">
+              <rect width="80" height="72" fill="#E3F2FD" rx="6"/>
+              <rect x="0" y="38" width="80" height="34" fill="#29B6F6"/>
+              <rect x="0" y="55" width="80" height="17" fill="#0288D1"/>
+              <ellipse cx="15" cy="55" rx="14" ry="6" fill="#795548"/>
+              <ellipse cx="65" cy="58" rx="12" ry="5" fill="#795548"/>
+              <path d="M5 42 Q20 36 35 42 Q50 36 65 42 Q75 36 80 42" stroke="#B3E5FC" stroke-width="2" fill="none"/>
+            </svg>
+            <span>Río 🏞️</span>
+          </div>
+          <div class="draggable-card" draggable="true" data-id="eco5" data-ans="terrestre" ondragstart="onDragStart(event,'eco5')">
+            <svg viewBox="0 0 80 72" xmlns="http://www.w3.org/2000/svg">
+              <rect width="80" height="72" fill="#FFF8E1" rx="6"/>
+              <rect x="0" y="45" width="80" height="27" fill="#8D6E63"/>
+              <ellipse cx="20" cy="45" rx="16" ry="8" fill="#A5D6A7"/>
+              <ellipse cx="50" cy="42" rx="20" ry="10" fill="#81C784"/>
+              <ellipse cx="68" cy="46" rx="12" ry="7" fill="#66BB6A"/>
+              <circle cx="35" cy="28" r="5" fill="#795548"/>
+              <line x1="25" y1="30" x2="20" y2="25" stroke="#795548" stroke-width="2"/>
+              <line x1="45" y1="30" x2="50" y2="25" stroke="#795548" stroke-width="2"/>
+            </svg>
+            <span>Sabana 🦁</span>
+          </div>
+          <div class="draggable-card" draggable="true" data-id="eco6" data-ans="acuatico" ondragstart="onDragStart(event,'eco6')">
+            <svg viewBox="0 0 80 72" xmlns="http://www.w3.org/2000/svg">
+              <rect width="80" height="72" fill="#E3F2FD" rx="6"/>
+              <rect x="0" y="28" width="80" height="44" fill="#1565C0"/>
+              <path d="M0 28 Q10 20 20 28 Q30 20 40 28 Q50 20 60 28 Q70 20 80 28" fill="#1E88E5"/>
+              <path d="M0 36 Q15 30 30 36 Q45 30 60 36 Q70 30 80 36" stroke="#42A5F5" stroke-width="2" fill="none"/>
+              <ellipse cx="50" cy="48" rx="10" ry="6" fill="#0D47A1" opacity=".5"/>
+            </svg>
+            <span>Océano 🌊</span>
+          </div>
+        </div>
+        <div class="drop-grid">
+          <div class="drop-zone" id="drop-terrestre" ondragover="onDragOver(event)" ondrop="onDrop(event,'terrestre')">
+            <div class="drop-zone-label" style="background:#e8711a">🏔️ Terrestre</div>
+            <div class="drop-zone-items" id="items-terrestre"></div>
+          </div>
+          <div class="drop-zone" id="drop-acuatico" ondragover="onDragOver(event)" ondrop="onDrop(event,'acuatico')">
+            <div class="drop-zone-label" style="background:#1a73e8">🌊 Acuático</div>
+            <div class="drop-zone-items" id="items-acuatico"></div>
+          </div>
+        </div>
+        <button class="check-btn" onclick="checkDrag({'eco1':'terrestre','eco2':'acuatico','eco3':'terrestre','eco4':'acuatico','eco5':'terrestre','eco6':'acuatico'},'fb-m-drag','score-martes',12)">✔ Verificar</button>
+        <div class="feedback" id="fb-m-drag"></div>
+      </div>
+    </div>
+
+    <!-- SM -->
+    <div class="section">
+      <div class="section-header"><span>🟢</span><h3>PARTE 2 — Hábitat vs. Ecosistema</h3><span class="pts">6 pts (2 c/u)</span></div>
+      <div class="question">
+        <div class="q-label">Pregunta 1 de 3</div>
+        <p>¿Cuál es la <strong>diferencia</strong> entre hábitat y ecosistema?</p>
+        <div class="mc-options" id="m-mc1">
+          <label class="mc-option"><input type="radio" name="m-mc1"><span class="mc-radio"></span>a) Son exactamente lo mismo</label>
+          <label class="mc-option"><input type="radio" name="m-mc1"><span class="mc-radio"></span>b) El hábitat es donde vive un organismo; el ecosistema es un concepto más amplio</label>
+          <label class="mc-option"><input type="radio" name="m-mc1"><span class="mc-radio"></span>c) El ecosistema es solo para animales</label>
+        </div>
+      </div>
+      <div class="question">
+        <div class="q-label">Pregunta 2 de 3</div>
+        <p>¿Qué es un <strong>ecosistema</strong>?</p>
+        <div class="mc-options" id="m-mc2">
+          <label class="mc-option"><input type="radio" name="m-mc2"><span class="mc-radio"></span>a) Un sistema natural formado por componentes que se relacionan entre sí</label>
+          <label class="mc-option"><input type="radio" name="m-mc2"><span class="mc-radio"></span>b) Solo el conjunto de animales de un lugar</label>
+          <label class="mc-option"><input type="radio" name="m-mc2"><span class="mc-radio"></span>c) El lugar donde vive un solo animal</label>
+        </div>
+      </div>
+      <div class="question">
+        <div class="q-label">Pregunta 3 de 3</div>
+        <p>¿Cuál de los siguientes es un ejemplo de ecosistema <strong>terrestre</strong>?</p>
+        <div class="mc-options" id="m-mc3">
+          <label class="mc-option"><input type="radio" name="m-mc3"><span class="mc-radio"></span>a) Un arrecife de coral 🪸</label>
+          <label class="mc-option"><input type="radio" name="m-mc3"><span class="mc-radio"></span>b) Un lago profundo 🏞️</label>
+          <label class="mc-option"><input type="radio" name="m-mc3"><span class="mc-radio"></span>c) Un bosque tropical 🌿</label>
+        </div>
+      </div>
+      <button class="check-btn" onclick="checkMC(['m-mc1','m-mc2','m-mc3'],[1,0,2],'fb-m-mc','score-martes',6)">✔ Verificar</button>
+      <div class="feedback" id="fb-m-mc"></div>
+    </div>
+
+    <!-- ABIERTA -->
+    <div class="section">
+      <div class="section-header"><span>🟢</span><h3>PARTE 3 — Pregunta Abierta</h3><span class="pts">4 pts</span></div>
+      <div class="question">
+        <p>🏫 Imagina que el patio de tu escuela es un ecosistema. ¿Cuáles son las partes vivas (bióticas) y no vivas (abióticas) de ese ecosistema?</p>
+        <textarea class="open-textarea" id="open-martes"></textarea>
+        <div class="open-note">⭐ El maestro calificará esta pregunta.</div>
+      </div>
+    </div>
+  </div>
+  <div class="score-bar">
+    <div class="score-display" style="color:var(--martes)">Puntuación: <span id="score-martes">0</span> / 18 pts automáticos</div>
+    <button class="submit-btn" onclick="submitDay('martes','Martes',18)">Entregar tarea ✅</button>
+  </div>
+</div>
+
+<!-- ===== MIÉRCOLES ===== -->
+<div class="day-card miercoles" id="card-miercoles">
+  <div class="day-header">
+    <div class="day-icon">📙</div>
+    <div class="day-title"><h2>MIÉRCOLES</h2><p>Adaptaciones — Cubierta Corporal</p></div>
+    <span class="day-badge">26 pts</span>
+  </div>
+  <div class="lock-screen" id="lock-miercoles">
+    <div class="lock-ico">🔒</div>
+    <p>Tarea bloqueada</p>
+    <small>El maestro desbloqueará esta tarea</small>
+  </div>
+  <div class="day-content">
+    <div class="student-info">
+      <div class="s-field"><label>Nombre completo</label><input type="text" id="nombre-miercoles" placeholder="Escribe tu nombre..."></div>
+      <div class="s-field"><label>Fecha</label><input type="date" id="fecha-miercoles"></div>
+      <div class="s-field"><label>Grado</label><input type="text" value="3ro" readonly></div>
+    </div>
+    <div class="concept-box" style="border-color:var(--miercoles)">
+      <strong>📖 Recuerda:</strong> La <strong>cubierta corporal</strong> protege a los animales. Las <strong>escamas</strong> cubren a peces y serpientes. El <strong>pelaje</strong> mantiene el calor en mamíferos. Las <strong>plumas</strong> permiten volar y protegen a las aves.
+    </div>
+
+    <!-- ARRASTRAR ANIMALES -->
+    <div class="section">
+      <div class="section-header"><span>🟡</span><h3>PARTE 1 — Clasifica la cubierta corporal</h3><span class="pts">12 pts (2 c/u)</span></div>
+      <div class="question">
+        <p>🐾 Arrastra cada animal a su tipo de cubierta corporal.</p>
+        <div class="img-pool" id="pool-miercoles">
+          <div class="draggable-card" draggable="true" data-id="an1" data-ans="escamas" ondragstart="onDragStart(event,'an1')">
+            <svg viewBox="0 0 80 72" xmlns="http://www.w3.org/2000/svg">
+              <rect width="80" height="72" fill="#E3F2FD" rx="6"/>
+              <!-- Fish body -->
+              <ellipse cx="38" cy="40" rx="24" ry="14" fill="#42A5F5"/>
+              <!-- scales -->
+              <ellipse cx="30" cy="38" rx="7" ry="5" fill="#1E88E5" opacity=".6"/>
+              <ellipse cx="40" cy="34" rx="7" ry="5" fill="#1E88E5" opacity=".6"/>
+              <ellipse cx="44" cy="43" rx="7" ry="5" fill="#1E88E5" opacity=".6"/>
+              <!-- tail -->
+              <polygon points="62,30 72,22 72,58 62,50" fill="#1565C0"/>
+              <!-- eye -->
+              <circle cx="22" cy="38" r="4" fill="white"/>
+              <circle cx="22" cy="38" r="2" fill="#333"/>
+              <!-- fin top -->
+              <path d="M30 26 Q40 18 50 26" stroke="#1565C0" stroke-width="2" fill="#42A5F5" opacity=".7"/>
+            </svg>
+            <span>Pez 🐟</span>
+          </div>
+          <div class="draggable-card" draggable="true" data-id="an2" data-ans="pelaje" ondragstart="onDragStart(event,'an2')">
+            <svg viewBox="0 0 80 72" xmlns="http://www.w3.org/2000/svg">
+              <rect width="80" height="72" fill="#FFF8E1" rx="6"/>
+              <!-- dog body -->
+              <ellipse cx="42" cy="48" rx="22" ry="16" fill="#FFCC80"/>
+              <!-- head -->
+              <circle cx="22" cy="36" r="15" fill="#FFCC80"/>
+              <!-- ears -->
+              <ellipse cx="12" cy="25" rx="7" ry="11" fill="#FFA726" transform="rotate(-15 12 25)"/>
+              <ellipse cx="30" cy="24" rx="6" ry="10" fill="#FFA726" transform="rotate(15 30 24)"/>
+              <!-- eyes -->
+              <circle cx="18" cy="35" r="3" fill="#333"/>
+              <circle cx="27" cy="35" r="3" fill="#333"/>
+              <circle cx="19" cy="34" r="1" fill="white"/>
+              <circle cx="28" cy="34" r="1" fill="white"/>
+              <!-- nose -->
+              <ellipse cx="22" cy="41" rx="5" ry="3" fill="#FF8A65"/>
+              <!-- tail -->
+              <path d="M64 40 Q76 30 72 50" stroke="#FFA726" stroke-width="5" fill="none"/>
+              <!-- legs -->
+              <rect x="24" y="60" width="8" height="10" rx="3" fill="#FFCC80"/>
+              <rect x="50" y="60" width="8" height="10" rx="3" fill="#FFCC80"/>
+            </svg>
+            <span>Perro 🐕</span>
+          </div>
+          <div class="draggable-card" draggable="true" data-id="an3" data-ans="plumas" ondragstart="onDragStart(event,'an3')">
+            <svg viewBox="0 0 80 72" xmlns="http://www.w3.org/2000/svg">
+              <rect width="80" height="72" fill="#E8F5E9" rx="6"/>
+              <!-- duck body -->
+              <ellipse cx="45" cy="50" rx="26" ry="16" fill="#66BB6A"/>
+              <!-- wing -->
+              <ellipse cx="50" cy="46" rx="18" ry="10" fill="#43A047"/>
+              <!-- head -->
+              <circle cx="20" cy="34" r="13" fill="#66BB6A"/>
+              <!-- beak -->
+              <polygon points="6,34 14,30 14,38" fill="#FDD835"/>
+              <!-- eye -->
+              <circle cx="24" cy="31" r="4" fill="white"/>
+              <circle cx="24" cy="31" r="2" fill="#333"/>
+              <!-- tail feathers -->
+              <path d="M70 44 Q78 36 76 52" stroke="#2E7D32" stroke-width="3" fill="none"/>
+              <path d="M70 48 Q80 42 76 56" stroke="#388E3C" stroke-width="3" fill="none"/>
+            </svg>
+            <span>Pato 🦆</span>
+          </div>
+          <div class="draggable-card" draggable="true" data-id="an4" data-ans="escamas" ondragstart="onDragStart(event,'an4')">
+            <svg viewBox="0 0 80 72" xmlns="http://www.w3.org/2000/svg">
+              <rect width="80" height="72" fill="#E8F5E9" rx="6"/>
+              <!-- snake body -->
+              <path d="M10 55 Q30 45 40 35 Q55 20 65 30 Q75 40 65 50 Q55 60 45 52 Q35 44 25 50 Q15 56 10 55Z" fill="#66BB6A" stroke="#388E3C" stroke-width="1"/>
+              <!-- scales pattern -->
+              <path d="M20 52 Q22 48 24 52" stroke="#43A047" stroke-width="1" fill="none"/>
+              <path d="M30 48 Q32 44 34 48" stroke="#43A047" stroke-width="1" fill="none"/>
+              <path d="M40 40 Q42 36 44 40" stroke="#43A047" stroke-width="1" fill="none"/>
+              <!-- head -->
+              <ellipse cx="62" cy="34" rx="10" ry="7" fill="#4CAF50"/>
+              <!-- eye -->
+              <circle cx="67" cy="31" r="2.5" fill="#FDD835"/>
+              <circle cx="67" cy="31" r="1" fill="#333"/>
+              <!-- tongue -->
+              <path d="M52 34 L46 34 L44 31 M46 34 L44 37" stroke="red" stroke-width="1.5" fill="none"/>
+            </svg>
+            <span>Serpiente 🐍</span>
+          </div>
+          <div class="draggable-card" draggable="true" data-id="an5" data-ans="pelaje" ondragstart="onDragStart(event,'an5')">
+            <svg viewBox="0 0 80 72" xmlns="http://www.w3.org/2000/svg">
+              <rect width="80" height="72" fill="#E3F2FD" rx="6"/>
+              <!-- polar bear body -->
+              <ellipse cx="42" cy="52" rx="26" ry="17" fill="#F5F5F5"/>
+              <!-- fur texture -->
+              <ellipse cx="42" cy="52" rx="23" ry="14" fill="white"/>
+              <!-- head -->
+              <circle cx="20" cy="36" r="16" fill="white"/>
+              <!-- ears -->
+              <circle cx="10" cy="22" r="6" fill="#F5F5F5"/>
+              <circle cx="28" cy="21" r="6" fill="#F5F5F5"/>
+              <!-- eyes -->
+              <circle cx="16" cy="33" r="3" fill="#333"/>
+              <circle cx="26" cy="33" r="3" fill="#333"/>
+              <circle cx="17" cy="32" r="1" fill="white"/>
+              <circle cx="27" cy="32" r="1" fill="white"/>
+              <!-- nose -->
+              <ellipse cx="20" cy="40" rx="5" ry="3" fill="#333"/>
+              <!-- paws -->
+              <ellipse cx="24" cy="65" rx="9" ry="5" fill="#F5F5F5"/>
+              <ellipse cx="56" cy="65" rx="9" ry="5" fill="#F5F5F5"/>
+            </svg>
+            <span>Oso polar 🐻‍❄️</span>
+          </div>
+          <div class="draggable-card" draggable="true" data-id="an6" data-ans="plumas" ondragstart="onDragStart(event,'an6')">
+            <svg viewBox="0 0 80 72" xmlns="http://www.w3.org/2000/svg">
+              <rect width="80" height="72" fill="#FFF3E0" rx="6"/>
+              <!-- eagle body -->
+              <ellipse cx="40" cy="50" rx="20" ry="16" fill="#795548"/>
+              <!-- white head -->
+              <circle cx="40" cy="28" r="14" fill="white"/>
+              <!-- beak -->
+              <polygon points="26,28 20,24 20,32" fill="#FDD835"/>
+              <!-- eye -->
+              <circle cx="33" cy="26" r="4" fill="#FDD835"/>
+              <circle cx="33" cy="26" r="2" fill="#333"/>
+              <!-- wings spread -->
+              <path d="M20 46 Q10 36 5 42 Q10 52 20 56Z" fill="#5D4037"/>
+              <path d="M60 46 Q70 36 75 42 Q70 52 60 56Z" fill="#5D4037"/>
+              <!-- tail -->
+              <path d="M30 64 Q40 70 50 64 Q45 58 35 58Z" fill="#5D4037"/>
+            </svg>
+            <span>Águila 🦅</span>
+          </div>
+        </div>
+        <div class="drop-grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="drop-zone" id="drop-escamas" ondragover="onDragOver(event)" ondrop="onDrop(event,'escamas')">
+            <div class="drop-zone-label" style="background:#1a73e8">🐟 Escamas</div>
+            <div class="drop-zone-items" id="items-escamas"></div>
+          </div>
+          <div class="drop-zone" id="drop-pelaje" ondragover="onDragOver(event)" ondrop="onDrop(event,'pelaje')">
+            <div class="drop-zone-label" style="background:#e8711a">🐻 Pelaje</div>
+            <div class="drop-zone-items" id="items-pelaje"></div>
+          </div>
+          <div class="drop-zone" id="drop-plumas" ondragover="onDragOver(event)" ondrop="onDrop(event,'plumas')">
+            <div class="drop-zone-label" style="background:#0f9d58">🦅 Plumas</div>
+            <div class="drop-zone-items" id="items-plumas"></div>
+          </div>
+        </div>
+        <button class="check-btn" onclick="checkDrag({'an1':'escamas','an2':'pelaje','an3':'plumas','an4':'escamas','an5':'pelaje','an6':'plumas'},'fb-c-drag','score-miercoles',12)">✔ Verificar</button>
+        <div class="feedback" id="fb-c-drag"></div>
+      </div>
+    </div>
+
+    <!-- SM -->
+    <div class="section">
+      <div class="section-header"><span>🟡</span><h3>PARTE 2 — Selección Múltiple</h3><span class="pts">8 pts (2 c/u)</span></div>
+      <div class="question">
+        <div class="q-label">Pregunta 1 de 4</div>
+        <div class="q-svg-single">
+          <svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+            <rect width="300" height="100" fill="#E3F2FD" rx="8"/>
+            <ellipse cx="130" cy="55" rx="65" ry="35" fill="#42A5F5"/>
+            <ellipse cx="95" cy="50" rx="18" ry="12" fill="#1E88E5" opacity=".6"/>
+            <ellipse cx="120" cy="42" rx="18" ry="12" fill="#1E88E5" opacity=".6"/>
+            <ellipse cx="140" cy="60" rx="18" ry="12" fill="#1E88E5" opacity=".6"/>
+            <polygon points="195,35 215,20 215,90 195,75" fill="#1565C0"/>
+            <circle cx="84" cy="52" r="8" fill="white"/>
+            <circle cx="84" cy="52" r="4" fill="#333"/>
+            <path d="M85 42 Q110 30 130 42" stroke="#1565C0" stroke-width="2" fill="#42A5F5" opacity=".6"/>
+            <text x="230" y="60" font-size="12" fill="#1565C0" font-weight="bold">🐟</text>
+          </svg>
+        </div>
+        <p>¿Cuál es la función principal de las <strong>escamas</strong> en los peces?</p>
+        <div class="mc-options" id="c-mc1">
+          <label class="mc-option"><input type="radio" name="c-mc1"><span class="mc-radio"></span>a) Ayudar a los peces a volar</label>
+          <label class="mc-option"><input type="radio" name="c-mc1"><span class="mc-radio"></span>b) Proteger a los peces en su medio ambiente</label>
+          <label class="mc-option"><input type="radio" name="c-mc1"><span class="mc-radio"></span>c) Mantener el calor del cuerpo</label>
+        </div>
+      </div>
+      <div class="question">
+        <div class="q-label">Pregunta 2 de 4</div>
+        <div class="q-svg-single">
+          <svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+            <rect width="300" height="100" fill="#E3F2FD" rx="8"/>
+            <rect x="0" y="70" width="300" height="30" fill="#B0BEC5"/>
+            <ellipse cx="130" cy="60" rx="55" ry="38" fill="white"/>
+            <ellipse cx="130" cy="60" rx="48" ry="32" fill="#F5F5F5"/>
+            <circle cx="88" cy="44" r="22" fill="white"/>
+            <circle cx="72" cy="28" r="9" fill="#F5F5F5"/>
+            <circle cx="100" cy="26" r="9" fill="#F5F5F5"/>
+            <circle cx="81" cy="40" r="5" fill="#333"/>
+            <circle cx="96" cy="40" r="5" fill="#333"/>
+            <ellipse cx="88" cy="52" rx="7" ry="4" fill="#333"/>
+            <text x="200" y="55" font-size="30">🐻‍❄️</text>
+          </svg>
+        </div>
+        <p>El oso polar vive en un lugar muy frío. ¿Qué cubierta lo ayuda a sobrevivir?</p>
+        <div class="mc-options" id="c-mc2">
+          <label class="mc-option"><input type="radio" name="c-mc2"><span class="mc-radio"></span>a) Escamas brillantes</label>
+          <label class="mc-option"><input type="radio" name="c-mc2"><span class="mc-radio"></span>b) Plumas de colores</label>
+          <label class="mc-option"><input type="radio" name="c-mc2"><span class="mc-radio"></span>c) Pelo grueso y largo</label>
+        </div>
+      </div>
+      <div class="question">
+        <div class="q-label">Pregunta 3 de 4</div>
+        <p>¿Qué pasaría si un pájaro no tuviera <strong>plumas</strong>?</p>
+        <div class="mc-options" id="c-mc3">
+          <label class="mc-option"><input type="radio" name="c-mc3"><span class="mc-radio"></span>a) Volaría más rápido porque sería más ligero</label>
+          <label class="mc-option"><input type="radio" name="c-mc3"><span class="mc-radio"></span>b) Tendría frío y sus órganos podrían lastimarse</label>
+          <label class="mc-option"><input type="radio" name="c-mc3"><span class="mc-radio"></span>c) Nadaría mejor como un pez</label>
+        </div>
+      </div>
+      <div class="question">
+        <div class="q-label">Pregunta 4 de 4</div>
+        <p>¿Por qué un cocodrilo tiene <strong>escamas duras</strong> en lugar de plumas?</p>
+        <div class="mc-options" id="c-mc4">
+          <label class="mc-option"><input type="radio" name="c-mc4"><span class="mc-radio"></span>a) Las escamas lo protegen mejor en el agua y en la tierra 🐊</label>
+          <label class="mc-option"><input type="radio" name="c-mc4"><span class="mc-radio"></span>b) Las escamas lo hacen más suave para nadar</label>
+          <label class="mc-option"><input type="radio" name="c-mc4"><span class="mc-radio"></span>c) Las plumas lo harían sentir mucho calor</label>
+        </div>
+      </div>
+      <button class="check-btn" onclick="checkMC(['c-mc1','c-mc2','c-mc3','c-mc4'],[1,2,1,0],'fb-c-mc','score-miercoles',8)">✔ Verificar</button>
+      <div class="feedback" id="fb-c-mc"></div>
+    </div>
+
+    <!-- BLANCOS -->
+    <div class="section">
+      <div class="section-header"><span>🟡</span><h3>PARTE 3 — Llenar los blancos</h3><span class="pts">6 pts (2 c/u)</span></div>
+      <div class="word-bank"><div class="wb-title">📦 Banco de palabras</div>
+        <div class="word-chips"><span class="chip">escamas</span><span class="chip">pelos</span><span class="chip">plumas</span></div>
+      </div>
+      <div class="question">
+        <div class="fill-sentence">1. Las <input class="blank-input" id="cb-1" placeholder="escribe aquí"> son unas placas finas que forman parte de la piel en la mayoría de los peces.</div>
+        <div class="fill-sentence">2. La mayoría de los mamíferos poseen <input class="blank-input" id="cb-2" placeholder="escribe aquí"> para conservar el calor de su cuerpo.</div>
+        <div class="fill-sentence">3. Las <input class="blank-input" id="cb-3" placeholder="escribe aquí"> son la cubierta corporal de las aves y son livianas pero muy resistentes.</div>
+        <button class="check-btn" onclick="checkBlanks(['cb-1','cb-2','cb-3'],['escamas','pelos','plumas'],'fb-c-blanks','score-miercoles',6)">✔ Verificar</button>
+        <div class="feedback" id="fb-c-blanks"></div>
+      </div>
+    </div>
+  </div>
+  <div class="score-bar">
+    <div class="score-display" style="color:var(--miercoles)">Puntuación: <span id="score-miercoles">0</span> / 26 pts automáticos</div>
+    <button class="submit-btn" onclick="submitDay('miercoles','Miércoles',26)">Entregar tarea ✅</button>
+  </div>
+</div>
+
+<!-- ===== JUEVES ===== -->
+<div class="day-card jueves" id="card-jueves">
+  <div class="day-header">
+    <div class="day-icon">📒</div>
+    <div class="day-title"><h2>JUEVES</h2><p>Camuflaje y Mimetismo</p></div>
+    <span class="day-badge">20 pts</span>
+  </div>
+  <div class="lock-screen" id="lock-jueves">
+    <div class="lock-ico">🔒</div>
+    <p>Tarea bloqueada</p>
+    <small>El maestro desbloqueará esta tarea</small>
+  </div>
+  <div class="day-content">
+    <div class="student-info">
+      <div class="s-field"><label>Nombre completo</label><input type="text" id="nombre-jueves" placeholder="Escribe tu nombre..."></div>
+      <div class="s-field"><label>Fecha</label><input type="date" id="fecha-jueves"></div>
+      <div class="s-field"><label>Grado</label><input type="text" value="3ro" readonly></div>
+    </div>
+    <div class="concept-box" style="border-color:var(--jueves)">
+      <strong>📖 Recuerda:</strong> El <strong>camuflaje</strong> es cuando el animal se confunde con su entorno para no ser detectado. El <strong>mimetismo</strong> es cuando un animal inofensivo imita la apariencia de otro más peligroso para protegerse.
+    </div>
+
+    <!-- SM -->
+    <div class="section">
+      <div class="section-header"><span>🟠</span><h3>PARTE 1 — Selección Múltiple</h3><span class="pts">8 pts (2 c/u)</span></div>
+      <div class="question">
+        <div class="q-label">Pregunta 1 de 4</div>
+        <!-- SVG camuflaje: animal blend with leaves -->
+        <div class="q-svg-single">
+          <svg viewBox="0 0 300 110" xmlns="http://www.w3.org/2000/svg">
+            <rect width="300" height="110" fill="#C8E6C9" rx="8"/>
+            <ellipse cx="60" cy="80" rx="55" ry="25" fill="#4CAF50"/>
+            <ellipse cx="160" cy="85" rx="70" ry="22" fill="#388E3C"/>
+            <ellipse cx="260" cy="78" rx="45" ry="28" fill="#2E7D32"/>
+            <!-- leaf shapes -->
+            <path d="M80 60 Q100 40 120 60 Q100 50 80 60Z" fill="#66BB6A"/>
+            <path d="M140 55 Q165 32 185 55 Q165 45 140 55Z" fill="#81C784"/>
+            <path d="M200 62 Q220 44 240 62 Q220 52 200 62Z" fill="#4CAF50"/>
+            <!-- chameleon camouflaged -->
+            <ellipse cx="155" cy="72" rx="28" ry="12" fill="#43A047"/>
+            <circle cx="130" cy="68" r="10" fill="#43A047"/>
+            <circle cx="126" cy="65" r="3" fill="#FDD835"/>
+            <circle cx="126" cy="65" r="1.5" fill="#333"/>
+            <path d="M118 68 L110 62" stroke="#43A047" stroke-width="3"/>
+            <path d="M180 72 Q192 66 185 78" stroke="#43A047" stroke-width="3" fill="none"/>
+            <!-- dots/spots on body -->
+            <circle cx="145" cy="70" r="3" fill="#2E7D32"/>
+            <circle cx="158" cy="67" r="3" fill="#2E7D32"/>
+            <circle cx="168" cy="73" r="3" fill="#2E7D32"/>
+          </svg>
+        </div>
+        <p>Un camaleón tiene los mismos colores que las hojas donde vive. ¿Cómo se llama esta adaptación?</p>
+        <div class="mc-options" id="j-mc1">
+          <label class="mc-option"><input type="radio" name="j-mc1"><span class="mc-radio"></span>a) Hibernación</label>
+          <label class="mc-option"><input type="radio" name="j-mc1"><span class="mc-radio"></span>b) Camuflaje</label>
+          <label class="mc-option"><input type="radio" name="j-mc1"><span class="mc-radio"></span>c) Migración</label>
+          <label class="mc-option"><input type="radio" name="j-mc1"><span class="mc-radio"></span>d) Mimetismo</label>
+        </div>
+      </div>
+      <div class="question">
+        <div class="q-label">Pregunta 2 de 4</div>
+        <!-- SVG mimetismo: harmless snake looks like dangerous one -->
+        <div class="q-svg-single">
+          <svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+            <rect width="300" height="100" fill="#FFF8E1" rx="8"/>
+            <!-- snake 1 (coral) bands: red yellow black -->
+            <path d="M10 55 Q40 45 60 55 Q80 65 100 55 Q120 45 140 55" stroke="#F44336" stroke-width="14" fill="none" stroke-linecap="round"/>
+            <path d="M10 55 Q40 45 60 55 Q80 65 100 55 Q120 45 140 55" stroke="#FDD835" stroke-width="8" fill="none" stroke-dasharray="8 6" stroke-linecap="round"/>
+            <!-- head snake 1 -->
+            <ellipse cx="148" cy="54" rx="10" ry="7" fill="#F44336"/>
+            <circle cx="155" cy="51" r="2.5" fill="#333"/>
+            <text x="70" y="78" font-size="11" fill="#C62828" text-anchor="middle">Serpiente coralillo 😱</text>
+            <!-- snake 2 (harmless, same colors) -->
+            <path d="M170 55 Q200 45 220 55 Q240 65 260 55 Q280 45 295 55" stroke="#F44336" stroke-width="14" fill="none" stroke-linecap="round"/>
+            <path d="M170 55 Q200 45 220 55 Q240 65 260 55 Q280 45 295 55" stroke="#FDD835" stroke-width="8" fill="none" stroke-dasharray="8 6" stroke-linecap="round"/>
+            <!-- head snake 2 -->
+            <ellipse cx="162" cy="54" rx="10" ry="7" fill="#F44336"/>
+            <circle cx="155" cy="51" r="2.5" fill="#333"/>
+            <text x="230" y="78" font-size="11" fill="#1B5E20" text-anchor="middle">Serpiente real 😇</text>
+          </svg>
+        </div>
+        <p>La serpiente real <strong>imita</strong> los colores de la serpiente coralillo (muy venenosa) para que los depredadores no la ataquen. ¿Qué tipo de adaptación es esta?</p>
+        <div class="mc-options" id="j-mc2">
+          <label class="mc-option"><input type="radio" name="j-mc2"><span class="mc-radio"></span>a) Camuflaje</label>
+          <label class="mc-option"><input type="radio" name="j-mc2"><span class="mc-radio"></span>b) Mimetismo</label>
+          <label class="mc-option"><input type="radio" name="j-mc2"><span class="mc-radio"></span>c) Cubierta corporal</label>
+        </div>
+      </div>
+      <div class="question">
+        <div class="q-label">Pregunta 3 de 4</div>
+        <p>¿Qué garantiza la supervivencia de las especies que usan el camuflaje?</p>
+        <div class="mc-options" id="j-mc3">
+          <label class="mc-option"><input type="radio" name="j-mc3"><span class="mc-radio"></span>a) Su fuerza física</label>
+          <label class="mc-option"><input type="radio" name="j-mc3"><span class="mc-radio"></span>b) Su velocidad para correr</label>
+          <label class="mc-option"><input type="radio" name="j-mc3"><span class="mc-radio"></span>c) Las adaptaciones desarrolladas por la naturaleza</label>
+        </div>
+      </div>
+      <div class="question">
+        <div class="q-label">Pregunta 4 de 4</div>
+        <p>¿Qué les permite a los animales pasar <strong>desapercibidos</strong> ante sus depredadores?</p>
+        <div class="mc-options" id="j-mc4">
+          <label class="mc-option"><input type="radio" name="j-mc4"><span class="mc-radio"></span>a) Sus fuertes garras</label>
+          <label class="mc-option"><input type="radio" name="j-mc4"><span class="mc-radio"></span>b) Su camuflaje 🦎</label>
+          <label class="mc-option"><input type="radio" name="j-mc4"><span class="mc-radio"></span>c) Su velocidad</label>
+        </div>
+      </div>
+      <button class="check-btn" onclick="checkMC(['j-mc1','j-mc2','j-mc3','j-mc4'],[1,1,2,1],'fb-j-mc','score-jueves',8)">✔ Verificar</button>
+      <div class="feedback" id="fb-j-mc"></div>
+    </div>
+
+    <!-- BLANCOS -->
+    <div class="section">
+      <div class="section-header"><span>🟠</span><h3>PARTE 2 — Llenar los blancos</h3><span class="pts">8 pts (2 c/u)</span></div>
+      <div class="word-bank"><div class="wb-title">📦 Banco de palabras</div>
+        <div class="word-chips"><span class="chip">camuflaje</span><span class="chip">mimetismo</span><span class="chip">depredadores</span><span class="chip">adaptación</span></div>
+      </div>
+      <div class="question">
+        <div class="fill-sentence">1. El <input class="blank-input" id="jb-1" placeholder="escribe aquí"> ayuda al animal a confundirse con su medio ambiente.</div>
+        <div class="fill-sentence">2. El <input class="blank-input" id="jb-2" placeholder="escribe aquí"> es cuando un animal inofensivo se parece a otro más peligroso.</div>
+        <div class="fill-sentence">3. Los animales que se camuflan logran alejarse de sus <input class="blank-input" id="jb-3" placeholder="escribe aquí">.</div>
+        <div class="fill-sentence">4. Todo aquello que ayuda a un animal a ajustarse en su ambiente se llama <input class="blank-input" id="jb-4" placeholder="escribe aquí">.</div>
+        <button class="check-btn" onclick="checkBlanks(['jb-1','jb-2','jb-3','jb-4'],['camuflaje','mimetismo','depredadores','adaptación'],'fb-j-blanks','score-jueves',8)">✔ Verificar</button>
+        <div class="feedback" id="fb-j-blanks"></div>
+      </div>
+    </div>
+
+    <!-- ABIERTA -->
+    <div class="section">
+      <div class="section-header"><span>🟠</span><h3>PARTE 3 — Pregunta Abierta</h3><span class="pts">4 pts</span></div>
+      <div class="question">
+        <p>🦎 Explica con tus palabras: ¿En qué se diferencia el <strong>camuflaje</strong> del <strong>mimetismo</strong>? Da un ejemplo de cada uno.</p>
+        <textarea class="open-textarea" id="open-jueves"></textarea>
+        <div class="open-note">⭐ El maestro calificará esta pregunta.</div>
+      </div>
+    </div>
+  </div>
+  <div class="score-bar">
+    <div class="score-display" style="color:var(--jueves)">Puntuación: <span id="score-jueves">0</span> / 16 pts automáticos</div>
+    <button class="submit-btn" onclick="submitDay('jueves','Jueves',16)">Entregar tarea ✅</button>
+  </div>
+</div>
+
+<!-- ===== VIERNES ===== -->
+<div class="day-card viernes" id="card-viernes">
+  <div class="day-header">
+    <div class="day-icon">📓</div>
+    <div class="day-title"><h2>VIERNES</h2><p>Repaso General de la Unidad</p></div>
+    <span class="day-badge">30 pts</span>
+  </div>
+  <div class="lock-screen" id="lock-viernes">
+    <div class="lock-ico">🔒</div>
+    <p>Tarea bloqueada</p>
+    <small>El maestro desbloqueará esta tarea</small>
+  </div>
+  <div class="day-content">
+    <div class="student-info">
+      <div class="s-field"><label>Nombre completo</label><input type="text" id="nombre-viernes" placeholder="Escribe tu nombre..."></div>
+      <div class="s-field"><label>Fecha</label><input type="date" id="fecha-viernes"></div>
+      <div class="s-field"><label>Grado</label><input type="text" value="3ro" readonly></div>
+    </div>
+    <div class="concept-box" style="border-color:var(--viernes)">
+      <strong>📖 ¡Repaso de toda la semana!</strong> Biótico/abiótico, tipos de ecosistemas, hábitat, adaptaciones (cubierta corporal, camuflaje y mimetismo).
+    </div>
+
+    <!-- SM REPASO -->
+    <div class="section">
+      <div class="section-header"><span>🟣</span><h3>PARTE 1 — Selección Múltiple Repaso</h3><span class="pts">10 pts (2 c/u)</span></div>
+      <div class="question"><div class="q-label">Pregunta 1 de 5</div>
+        <p>¿Qué es un <strong>ecosistema</strong>?</p>
+        <div class="mc-options" id="v-mc1">
+          <label class="mc-option"><input type="radio" name="v-mc1"><span class="mc-radio"></span>a) Un lugar donde solo viven plantas</label>
+          <label class="mc-option"><input type="radio" name="v-mc1"><span class="mc-radio"></span>b) Un conjunto de seres vivos y no vivos que se afectan entre sí</label>
+          <label class="mc-option"><input type="radio" name="v-mc1"><span class="mc-radio"></span>c) Un tipo de animal que vive en el agua</label>
+        </div>
+      </div>
+      <div class="question"><div class="q-label">Pregunta 2 de 5</div>
+        <p>¿Cuál de estos es un factor <strong>abiótico</strong>?</p>
+        <div class="mc-options" id="v-mc2">
+          <label class="mc-option"><input type="radio" name="v-mc2"><span class="mc-radio"></span>a) Un árbol 🌳</label>
+          <label class="mc-option"><input type="radio" name="v-mc2"><span class="mc-radio"></span>b) Una rana 🐸</label>
+          <label class="mc-option"><input type="radio" name="v-mc2"><span class="mc-radio"></span>c) El sol ☀️</label>
+        </div>
+      </div>
+      <div class="question"><div class="q-label">Pregunta 3 de 5</div>
+        <p>¿Qué hace el <strong>camuflaje</strong> por un animal?</p>
+        <div class="mc-options" id="v-mc3">
+          <label class="mc-option"><input type="radio" name="v-mc3"><span class="mc-radio"></span>a) Lo hace más fuerte</label>
+          <label class="mc-option"><input type="radio" name="v-mc3"><span class="mc-radio"></span>b) Lo ayuda a nadar más rápido</label>
+          <label class="mc-option"><input type="radio" name="v-mc3"><span class="mc-radio"></span>c) Lo ayuda a confundirse con su ambiente</label>
+        </div>
+      </div>
+      <div class="question"><div class="q-label">Pregunta 4 de 5</div>
+        <p>¿En qué consiste el <strong>mimetismo</strong>?</p>
+        <div class="mc-options" id="v-mc4">
+          <label class="mc-option"><input type="radio" name="v-mc4"><span class="mc-radio"></span>a) El animal se esconde debajo de la tierra</label>
+          <label class="mc-option"><input type="radio" name="v-mc4"><span class="mc-radio"></span>b) Un animal se asemeja a otro para protegerse</label>
+          <label class="mc-option"><input type="radio" name="v-mc4"><span class="mc-radio"></span>c) El animal duerme durante el invierno</label>
+        </div>
+      </div>
+      <div class="question"><div class="q-label">Pregunta 5 de 5</div>
+        <p>¿Cómo ayudan las <strong>plumas impermeables</strong> a las aves acuáticas?</p>
+        <div class="mc-options" id="v-mc5">
+          <label class="mc-option"><input type="radio" name="v-mc5"><span class="mc-radio"></span>a) Las mantienen secas y flotando en el agua</label>
+          <label class="mc-option"><input type="radio" name="v-mc5"><span class="mc-radio"></span>b) Las hacen correr más rápido</label>
+          <label class="mc-option"><input type="radio" name="v-mc5"><span class="mc-radio"></span>c) Las ayudan a esconderse</label>
+        </div>
+      </div>
+      <button class="check-btn" onclick="checkMC(['v-mc1','v-mc2','v-mc3','v-mc4','v-mc5'],[1,2,2,1,0],'fb-v-mc','score-viernes',10)">✔ Verificar</button>
+      <div class="feedback" id="fb-v-mc"></div>
+    </div>
+
+    <!-- ARRASTRAR BIOTICO/ABIOTICO -->
+    <div class="section">
+      <div class="section-header"><span>🟣</span><h3>PARTE 2 — Biótico o Abiótico</h3><span class="pts">12 pts (2 c/u)</span></div>
+      <div class="question">
+        <p>🗂 Arrastra cada elemento al grupo correcto.</p>
+        <div class="img-pool" id="pool-viernes">
+          <div class="draggable-card" draggable="true" data-id="v1" data-ans="biotico" ondragstart="onDragStart(event,'v1')">
+            <svg viewBox="0 0 80 72" xmlns="http://www.w3.org/2000/svg">
+              <rect width="80" height="72" fill="#E8F5E9" rx="6"/>
+              <rect x="35" y="42" width="10" height="26" fill="#795548"/>
+              <ellipse cx="40" cy="30" rx="24" ry="22" fill="#2E7D32"/>
+              <ellipse cx="24" cy="40" rx="17" ry="16" fill="#388E3C"/>
+              <ellipse cx="56" cy="42" rx="16" ry="14" fill="#43A047"/>
+            </svg>
+            <span>Árbol 🌳</span>
+          </div>
+          <div class="draggable-card" draggable="true" data-id="v2" data-ans="abiotico" ondragstart="onDragStart(event,'v2')">
+            <svg viewBox="0 0 80 72" xmlns="http://www.w3.org/2000/svg">
+              <rect width="80" height="72" fill="#FFF8E1" rx="6"/>
+              <circle cx="40" cy="36" r="22" fill="#FDD835"/>
+              <line x1="40" y1="8" x2="40" y2="3" stroke="#FDD835" stroke-width="3"/>
+              <line x1="40" y1="64" x2="40" y2="69" stroke="#FDD835" stroke-width="3"/>
+              <line x1="8" y1="36" x2="3" y2="36" stroke="#FDD835" stroke-width="3"/>
+              <line x1="72" y1="36" x2="77" y2="36" stroke="#FDD835" stroke-width="3"/>
+              <line x1="16" y1="14" x2="12" y2="10" stroke="#FDD835" stroke-width="3"/>
+              <line x1="64" y1="58" x2="68" y2="62" stroke="#FDD835" stroke-width="3"/>
+              <line x1="64" y1="14" x2="68" y2="10" stroke="#FDD835" stroke-width="3"/>
+              <line x1="16" y1="58" x2="12" y2="62" stroke="#FDD835" stroke-width="3"/>
+            </svg>
+            <span>Sol ☀️</span>
+          </div>
+          <div class="draggable-card" draggable="true" data-id="v3" data-ans="biotico" ondragstart="onDragStart(event,'v3')">
+            <svg viewBox="0 0 80 72" xmlns="http://www.w3.org/2000/svg">
+              <rect width="80" height="72" fill="#FFF3E0" rx="6"/>
+              <!-- butterfly -->
+              <ellipse cx="40" cy="38" rx="4" ry="14" fill="#795548"/>
+              <path d="M36 32 Q20 14 10 26 Q18 42 36 38Z" fill="#FF9800"/>
+              <path d="M44 32 Q60 14 70 26 Q62 42 44 38Z" fill="#FF9800"/>
+              <path d="M36 42 Q18 52 14 44 Q20 58 36 44Z" fill="#FFA726"/>
+              <path d="M44 42 Q62 52 66 44 Q60 58 44 44Z" fill="#FFA726"/>
+              <circle cx="40" cy="30" r="4" fill="#795548"/>
+              <line x1="38" y1="26" x2="32" y2="20" stroke="#795548" stroke-width="1.5"/>
+              <line x1="42" y1="26" x2="48" y2="20" stroke="#795548" stroke-width="1.5"/>
+            </svg>
+            <span>Mariposa 🦋</span>
+          </div>
+          <div class="draggable-card" draggable="true" data-id="v4" data-ans="abiotico" ondragstart="onDragStart(event,'v4')">
+            <svg viewBox="0 0 80 72" xmlns="http://www.w3.org/2000/svg">
+              <rect width="80" height="72" fill="#E3F2FD" rx="6"/>
+              <ellipse cx="40" cy="50" rx="24" ry="16" fill="#29B6F6"/>
+              <ellipse cx="40" cy="42" rx="16" ry="26" fill="#29B6F6"/>
+              <ellipse cx="40" cy="36" rx="10" ry="20" fill="#81D4FA"/>
+              <ellipse cx="40" cy="28" rx="5" ry="10" fill="#B3E5FC"/>
+              <polygon points="40,10 32,30 48,30" fill="#29B6F6"/>
+            </svg>
+            <span>Agua 💧</span>
+          </div>
+          <div class="draggable-card" draggable="true" data-id="v5" data-ans="biotico" ondragstart="onDragStart(event,'v5')">
+            <svg viewBox="0 0 80 72" xmlns="http://www.w3.org/2000/svg">
+              <rect width="80" height="72" fill="#E3F2FD" rx="6"/>
+              <ellipse cx="45" cy="45" rx="22" ry="14" fill="#FF8F00"/>
+              <polygon points="67,36 75,26 75,64 67,54" fill="#E65100"/>
+              <circle cx="26" cy="42" r="8" fill="white"/>
+              <circle cx="26" cy="42" r="4" fill="#333"/>
+              <path d="M28 34 Q40 24 52 34" stroke="#E65100" stroke-width="2" fill="#FF8F00" opacity=".6"/>
+              <line x1="14" y1="45" x2="6" y2="42" stroke="#FF8F00" stroke-width="2"/>
+            </svg>
+            <span>Pez 🐟</span>
+          </div>
+          <div class="draggable-card" draggable="true" data-id="v6" data-ans="abiotico" ondragstart="onDragStart(event,'v6')">
+            <svg viewBox="0 0 80 72" xmlns="http://www.w3.org/2000/svg">
+              <rect width="80" height="72" fill="#ECEFF1" rx="6"/>
+              <ellipse cx="40" cy="55" rx="28" ry="14" fill="#9E9E9E"/>
+              <ellipse cx="38" cy="48" rx="22" ry="11" fill="#BDBDBD"/>
+              <ellipse cx="42" cy="42" rx="17" ry="10" fill="#E0E0E0"/>
+              <ellipse cx="40" cy="37" rx="12" ry="8" fill="#EEEEEE"/>
+            </svg>
+            <span>Roca 🪨</span>
+          </div>
+        </div>
+        <div class="drop-grid">
+          <div class="drop-zone" id="drop-biotico" ondragover="onDragOver(event)" ondrop="onDrop(event,'biotico')">
+            <div class="drop-zone-label" style="background:#0f9d58">🌿 Biótico (Vivo)</div>
+            <div class="drop-zone-items" id="items-biotico"></div>
+          </div>
+          <div class="drop-zone" id="drop-abiotico" ondragover="onDragOver(event)" ondrop="onDrop(event,'abiotico')">
+            <div class="drop-zone-label" style="background:#1a73e8">⚡ Abiótico (No vivo)</div>
+            <div class="drop-zone-items" id="items-abiotico"></div>
+          </div>
+        </div>
+        <button class="check-btn" onclick="checkDrag({'v1':'biotico','v2':'abiotico','v3':'biotico','v4':'abiotico','v5':'biotico','v6':'abiotico'},'fb-v-drag','score-viernes',12)">✔ Verificar</button>
+        <div class="feedback" id="fb-v-drag"></div>
+      </div>
+    </div>
+
+    <!-- ABIERTA -->
+    <div class="section">
+      <div class="section-header"><span>🟣</span><h3>PARTE 3 — Pregunta Abierta</h3><span class="pts">8 pts</span></div>
+      <div class="question">
+        <p>🌍 Escribe un párrafo (mínimo 5 oraciones): ¿Cómo las <strong>adaptaciones</strong> ayudan a un animal a sobrevivir en su hábitat? Usa ejemplos de cubierta corporal, camuflaje o mimetismo.</p>
+        <textarea class="open-textarea" style="min-height:120px" id="open-viernes"></textarea>
+        <div class="open-note">⭐ El maestro calificará esta pregunta (máximo 8 puntos).</div>
+      </div>
+    </div>
+  </div>
+  <div class="score-bar">
+    <div class="score-display" style="color:var(--viernes)">Puntuación: <span id="score-viernes">0</span> / 22 pts automáticos</div>
+    <button class="submit-btn" onclick="submitDay('viernes','Viernes',22)">Entregar tarea ✅</button>
+  </div>
+</div>
+
+</div><!-- end .main -->
+
+<script>
+// ===== MC CHECK =====
+const ANSWERS = {
+  lMC: [1,2,2,1],
+  mMC: [1,0,2],
+  cMC: [1,2,1,0],
+  jMC: [1,1,2,1],
+  vMC: [1,2,2,1,0]
+};
+
+function checkMC(groups, answers, fbId, scoreId, maxPts){
+  let score=0;
+  groups.forEach((g,i)=>{
+    const opts = document.querySelectorAll(`input[name="${g}"]`);
+    opts.forEach((inp,j)=>{
+      const opt = inp.closest('.mc-option');
+      opt.classList.remove('correct','incorrect','selected');
+      if(j===answers[i]) opt.classList.add('correct');
+      if(inp.checked && j!==answers[i]) opt.classList.add('incorrect');
+      if(inp.checked && j===answers[i]){ opt.classList.remove('incorrect'); opt.classList.add('correct'); score+=2; }
+    });
+  });
+  showFb(fbId, score, maxPts);
+  addScore(scoreId, score);
+}
+
+// ===== BLANKS CHECK =====
+function checkBlanks(ids, answers, fbId, scoreId, maxPts){
+  let score=0;
+  ids.forEach((id,i)=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    const v=el.value.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    const a=answers[i].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    if(v===a){ score+=2; el.style.borderColor='#0f9d58'; el.style.borderBottomWidth='3px'; }
+    else { el.style.borderColor='#d93025'; el.style.borderBottomWidth='3px'; }
+  });
+  showFb(fbId, score, maxPts);
+  addScore(scoreId, score);
+}
+
+// ===== DRAG AND DROP =====
+let dragId=null;
+function onDragStart(e,id){ dragId=id; e.dataTransfer.setData('text/plain',id); e.currentTarget.classList.add('dragging'); }
+function onDragOver(e){ e.preventDefault(); e.currentTarget.classList.add('over'); }
+document.addEventListener('dragleave',e=>{ if(e.target.classList && e.target.classList.contains('drop-zone')) e.target.classList.remove('over'); });
+function onDrop(e,zone){
+  e.preventDefault();
+  e.currentTarget.classList.remove('over');
+  const id=e.dataTransfer.getData('text/plain')||dragId;
+  const original=document.querySelector(`[data-id="${id}"]`);
+  if(!original) return;
+  original.classList.remove('dragging');
+  // Build small item for drop zone
+  const mini=document.createElement('div');
+  mini.className='dropped-item';
+  mini.setAttribute('data-id',id);
+  mini.setAttribute('draggable','true');
+  mini.ondragstart=(ev)=>onDragStart(ev,id);
+  const svg=original.querySelector('svg');
+  const sp=original.querySelector('span');
+  if(svg){ const s2=svg.cloneNode(true); mini.appendChild(s2); }
+  if(sp){ const s2=document.createElement('span'); s2.textContent=sp.textContent; mini.appendChild(s2); }
+  document.getElementById('items-'+zone).appendChild(mini);
+  original.remove();
+  dragId=null;
+}
+
+function checkDrag(correct,fbId,scoreId,maxPts){
+  let score=0;
+  Object.entries(correct).forEach(([id,ans])=>{
+    const el=document.querySelector(`[data-id="${id}"]`);
+    if(!el) return;
+    const zone=el.closest('.drop-zone');
+    if(zone && zone.id==='drop-'+ans) score+=2;
+  });
+  showFb(fbId,score,maxPts);
+  addScore(scoreId,score);
+}
+
+// ===== SCORE TRACKER =====
+const scores={lunes:0,martes:0,miercoles:0,jueves:0,viernes:0};
+function addScore(scoreId,pts){
+  const day=scoreId.replace('score-','');
+  scores[day]=(scores[day]||0)+pts;
+  const el=document.getElementById(scoreId);
+  if(el) el.textContent=scores[day];
+}
+
+// ===== FEEDBACK =====
+function showFb(id,score,max){
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.textContent=`${score===max?'🎉':'📝'} ${score}/${max} puntos${score===max?' ¡Perfecto!':' — revisa las respuestas en rojo'}`;
+  el.className='feedback show '+(score===max?'ok':'fail');
+}
+
+// ===== MC CLICK =====
+document.addEventListener('click',e=>{
+  const opt=e.target.closest('.mc-option');
+  if(!opt) return;
+  const inp=opt.querySelector('input[type="radio"]');
+  if(!inp) return;
+  document.querySelectorAll(`input[name="${inp.name}"]`).forEach(r=>r.closest('.mc-option').classList.remove('selected'));
+  inp.checked=true;
+  opt.classList.add('selected');
+});
+
+// ===== SUBMIT =====
+async function submitDay(dayKey,dayLabel,maxAuto){
+  const nombre=document.getElementById('nombre-'+dayKey)?.value.trim();
+  const fecha=document.getElementById('fecha-'+dayKey)?.value;
+  if(!nombre){ alert('⚠️ Por favor escribe tu nombre antes de entregar.'); return; }
+  if(!fecha){ alert('⚠️ Por favor selecciona la fecha de hoy.'); return; }
+
+  const open=document.getElementById('open-'+dayKey)?.value.trim()||'';
+  const scoreAuto=document.getElementById('score-'+dayKey)?.textContent||'0';
+
+  const ok=confirm(`📤 Entregar tarea del ${dayLabel}\n\n👤 Estudiante: ${nombre}\n📅 Fecha: ${fecha}\n📊 Puntuación automática: ${scoreAuto}/${maxAuto}\n\n¿Confirmas la entrega?`);
+  if(!ok) return;
+
+  if(typeof window.saveToFirebase==='function'){
+    const saved=await window.saveToFirebase({
+      nombre, dia:dayLabel, fechaEstudiante:fecha,
+      puntuacionAutomatica:scoreAuto, puntuacionMaximaAuto:maxAuto,
+      respuestaAbierta:open
+    });
+    if(saved){
+      const btn=document.querySelector(`#card-${dayKey} .submit-btn`);
+      if(btn){ btn.textContent='✅ ¡Entregado!'; btn.disabled=true; }
+    }
+  } else {
+    alert('⚠️ Firebase cargando. Espera un momento e intenta de nuevo.');
+  }
+}
+</script>
+</body>
+</html>
