@@ -1267,7 +1267,7 @@ function checkMC(groups, answers, fbId, scoreId, maxPts){
     });
   });
   showFb(fbId, score, maxPts);
-  addScore(scoreId, score);
+  addScore(scoreId, score, scoreId+'-mc');
 }
 
 // ===== BLANKS CHECK =====
@@ -1282,7 +1282,7 @@ function checkBlanks(ids, answers, fbId, scoreId, maxPts){
     else { el.style.borderColor='#d93025'; el.style.borderBottomWidth='3px'; }
   });
   showFb(fbId, score, maxPts);
-  addScore(scoreId, score);
+  addScore(scoreId, score, scoreId+'-blanks');
 }
 
 // ===== DRAG AND DROP =====
@@ -1321,16 +1321,24 @@ function checkDrag(correct,fbId,scoreId,maxPts){
     if(zone && zone.id==='drop-'+ans) score+=2;
   });
   showFb(fbId,score,maxPts);
-  addScore(scoreId,score);
+  addScore(scoreId,score,scoreId+'-drag');
 }
 
 // ===== SCORE TRACKER =====
-const scores={lunes:0,martes:0,miercoles:0,jueves:0,viernes:0};
-function addScore(scoreId,pts){
-  const day=scoreId.replace('score-','');
-  scores[day]=(scores[day]||0)+pts;
-  const el=document.getElementById(scoreId);
-  if(el) el.textContent=scores[day];
+// Each section stores its own score separately — prevents accumulation on re-verify
+const sectionScores = {};
+
+function addScore(scoreId, pts, sectionKey) {
+  // sectionKey identifies which section (e.g. 'lunes-mc', 'lunes-blanks')
+  // Store per section so re-verifying replaces instead of adds
+  const day = scoreId.replace('score-','');
+  sectionScores[sectionKey] = pts;
+  // Sum all sections for this day
+  const dayTotal = Object.entries(sectionScores)
+    .filter(([k]) => k.startsWith(day))
+    .reduce((sum, [,v]) => sum + v, 0);
+  const el = document.getElementById(scoreId);
+  if (el) el.textContent = dayTotal;
 }
 
 // ===== FEEDBACK =====
