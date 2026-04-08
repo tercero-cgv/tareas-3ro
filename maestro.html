@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel del Maestro — Unidad 3.4</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--red:#d93025;--red-light:#fce8e6;--green:#0f9d58;--green-light:#e6f4ea;--blue:#1a73e8;--blue-light:#e8f0fe;--gray-50:#f8f9fa;--gray-200:#e8eaed;--gray-400:#9aa0a6;--gray-600:#5f6368;--text:#202124}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Poppins',sans-serif;background:#f0f2f5;color:var(--text);min-height:100vh}
+
+/* LOGIN */
+.login-wrap{position:fixed;inset:0;background:linear-gradient(135deg,#d93025,#b71c1c);display:flex;align-items:center;justify-content:center;z-index:999}
+.login-box{background:white;border-radius:24px;padding:44px 36px;max-width:380px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.login-logo{font-size:3rem;margin-bottom:12px}
+.login-box h1{font-family:'Nunito',sans-serif;font-size:1.5rem;font-weight:900;margin-bottom:6px}
+.login-box p{font-size:.85rem;color:var(--gray-600);margin-bottom:24px}
+.login-input{width:100%;border:2px solid var(--gray-200);border-radius:12px;padding:14px;font-family:'Poppins',sans-serif;font-size:1.1rem;text-align:center;letter-spacing:6px;outline:none;margin-bottom:6px;transition:border-color .2s}
+.login-input:focus{border-color:var(--red)}
+.login-error{color:var(--red);font-size:.8rem;font-weight:700;height:20px;margin-bottom:10px}
+.login-btn{width:100%;padding:14px;border:none;border-radius:12px;background:var(--red);color:white;font-family:'Poppins',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;transition:all .2s}
+.login-btn:hover{background:#b71c1c}
+
+/* HEADER */
+header{background:var(--red);color:white;padding:16px 28px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+header h1{font-family:'Nunito',sans-serif;font-size:1.2rem;font-weight:900}
+header p{font-size:.75rem;opacity:.85;margin-top:2px}
+.hdr-btns{display:flex;gap:10px;align-items:center}
+.hdr-link{background:rgba(255,255,255,.2);color:white;text-decoration:none;padding:7px 14px;border-radius:20px;font-size:.78rem;font-weight:700}
+.hdr-link:hover{background:rgba(255,255,255,.3)}
+.hdr-out{background:rgba(255,255,255,.15);border:none;color:white;padding:7px 14px;border-radius:20px;font-size:.78rem;font-weight:700;cursor:pointer}
+.hdr-out:hover{background:rgba(255,255,255,.25)}
+
+/* MAIN */
+.main{max-width:960px;margin:0 auto;padding:28px 18px}
+
+/* TABS */
+.tabs{display:flex;background:white;border-radius:14px;padding:6px;margin-bottom:22px;box-shadow:0 2px 8px rgba(0,0,0,.07);gap:6px}
+.tab-btn{flex:1;padding:11px;border:none;background:transparent;font-family:'Poppins',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;border-radius:10px;color:var(--gray-600);transition:all .2s}
+.tab-btn:hover{background:var(--gray-50)}
+.tab-btn.active{background:var(--red);color:white}
+
+/* PANELS */
+.panel{background:white;border-radius:16px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.07);display:none}
+.panel.active{display:block}
+.panel-title{font-family:'Nunito',sans-serif;font-size:1.1rem;font-weight:900;margin-bottom:4px}
+.panel-sub{font-size:.8rem;color:var(--gray-600);margin-bottom:20px}
+
+/* REALTIME BAR */
+.rt-bar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--green-light);border-radius:10px;margin-bottom:18px;font-size:.82rem;font-weight:600;color:var(--green)}
+.pulse{width:10px;height:10px;border-radius:50%;background:var(--green);flex-shrink:0;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+
+/* ACTION BAR */
+.action-bar{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+.act-btn{padding:9px 18px;border:none;border-radius:20px;font-family:'Poppins',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;transition:all .2s}
+.act-green{background:var(--green-light);color:var(--green)}
+.act-green:hover{background:#b8dfc9}
+.act-red{background:var(--red-light);color:var(--red)}
+.act-red:hover{background:#f5c6c3}
+.act-blue{background:var(--blue-light);color:var(--blue)}
+.act-blue:hover{background:#c5d9f8}
+
+/* LOCK GRID */
+.lock-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:14px}
+.lock-card{border-radius:14px;padding:18px 14px;text-align:center;border:2px solid;transition:all .3s}
+.lock-card.is-locked{background:var(--gray-50);border-color:var(--gray-200)}
+.lock-card.is-open{background:var(--green-light);border-color:var(--green)}
+.lc-icon{font-size:2rem;margin-bottom:8px;display:block}
+.lc-day{font-family:'Nunito',sans-serif;font-weight:900;font-size:.95rem;margin-bottom:2px}
+.lc-topic{font-size:.72rem;color:var(--gray-600);margin-bottom:8px}
+.lc-status{font-size:.72rem;font-weight:700;margin-bottom:12px}
+.lc-btn{width:100%;padding:9px;border:none;border-radius:8px;font-family:'Poppins',sans-serif;font-size:.78rem;font-weight:700;cursor:pointer;transition:all .2s}
+.lc-btn:disabled{opacity:.6;cursor:wait}
+.lc-open{background:var(--green);color:white}
+.lc-open:hover:not(:disabled){background:#0b7a42}
+.lc-close{background:var(--red-light);color:var(--red)}
+.lc-close:hover:not(:disabled){background:#f5c6c3}
+
+/* ANSWERS */
+.ans-day{border-radius:12px;overflow:hidden;margin-bottom:14px;border:1px solid var(--gray-200)}
+.ans-day-hdr{padding:10px 16px;color:white;font-weight:700;font-size:.9rem}
+.ans-day-body{padding:14px 16px}
+.ans-row{display:flex;gap:12px;margin-bottom:8px;font-size:.83rem}
+.ans-q{font-weight:700;color:var(--gray-600);min-width:100px;flex-shrink:0}
+.ans-a{font-weight:700}
+
+/* PUNTUACIONES */
+.pts-day-block { margin-bottom: 28px; }
+.pts-day-title {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 18px; border-radius: 12px 12px 0 0;
+  color: white; font-family: 'Nunito', sans-serif;
+  font-weight: 900; font-size: 1rem;
+}
+.pts-table {
+  width: 100%; border-collapse: collapse;
+  border-radius: 0 0 12px 12px; overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+}
+.pts-table th {
+  padding: 10px 14px; text-align: left;
+  font-size: .78rem; font-weight: 700;
+  letter-spacing: .4px; text-transform: uppercase;
+  color: white;
+}
+.pts-table td {
+  padding: 10px 14px; font-size: .88rem;
+  border-bottom: 1px solid var(--gray-200);
+  background: white;
+}
+.pts-table tr:last-child td { border-bottom: none; }
+.pts-table tr:hover td { background: var(--gray-50); }
+.pts-table td:first-child { font-weight: 700; }
+.pts-score { font-weight: 700; }
+.pts-dash { color: var(--gray-400); }
+.pts-total-row td {
+  background: var(--gray-50) !important;
+  font-weight: 900;
+  font-size: .9rem;
+  border-top: 2px solid var(--gray-200);
+}
+.pts-rank { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; font-size: .75rem; font-weight: 900; margin-right: 6px; }
+.pts-auto { color: var(--gray-600); font-size: .78rem; }
+.pts-open { font-size: .78rem; }
+.pts-summary { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.pts-summary-card { flex: 1; min-width: 120px; background: white; border: 1px solid var(--gray-200); border-radius: 10px; padding: 12px 16px; text-align: center; }
+.pts-summary-card .sc-num { font-family: 'Nunito', sans-serif; font-size: 1.6rem; font-weight: 900; }
+.pts-summary-card .sc-lbl { font-size: .72rem; color: var(--gray-600); font-weight: 600; margin-top: 2px; }
+.load-btn{background:var(--blue);color:white;border:none;padding:9px 20px;border-radius:20px;font-family:'Poppins',sans-serif;font-weight:700;font-size:.82rem;cursor:pointer;margin-bottom:16px;transition:all .2s}
+.load-btn:hover{background:#1558b0}
+.list-count{font-size:.8rem;color:var(--gray-600);font-weight:700;margin-bottom:12px}
+.loading{padding:28px;text-align:center;color:var(--gray-400)}
+.st-row{display:flex;align-items:center;gap:14px;padding:14px 16px;border:2px solid var(--gray-200);border-radius:12px;margin-bottom:10px;cursor:pointer;background:white;transition:all .2s}
+.st-row:hover{border-color:var(--red);box-shadow:0 3px 12px rgba(217,48,37,.1);transform:translateY(-1px)}
+.st-avatar{width:44px;height:44px;border-radius:50%;background:var(--red-light);color:var(--red);font-family:'Nunito',sans-serif;font-weight:900;font-size:1.3rem;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.st-name{font-weight:700;font-size:.95rem;margin-bottom:5px}
+.st-chips{display:flex;flex-wrap:wrap;gap:5px}
+.day-chip{font-size:.7rem;font-weight:700;padding:2px 10px;border-radius:20px}
+.st-arrow{color:var(--gray-400);font-size:1.1rem;margin-left:auto}
+.back-btn{background:none;border:none;color:var(--red);font-family:'Poppins',sans-serif;font-weight:700;font-size:.85rem;cursor:pointer;padding:0;margin-bottom:14px;display:flex;align-items:center;gap:5px}
+.back-btn:hover{text-decoration:underline}
+.detail-name{font-family:'Nunito',sans-serif;font-weight:900;font-size:1.3rem;margin-bottom:16px}
+.task-card{border:1px solid var(--gray-200);border-radius:14px;margin-bottom:14px;overflow:hidden}
+.task-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;color:white;font-weight:700;font-size:.9rem}
+.task-body{padding:14px 16px}
+.task-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px}
+.task-row.col{flex-direction:column;align-items:flex-start}
+.task-lbl{font-size:.8rem;font-weight:700;color:var(--gray-600)}
+.score-pill{padding:3px 14px;border-radius:20px;font-weight:700;font-size:.83rem}
+.open-box{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:10px 12px;font-size:.85rem;line-height:1.6;width:100%;margin-top:5px}
+.grade-row{flex-wrap:wrap;gap:8px}
+.grade-ctrl{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.grade-inp{width:70px;border:2px solid var(--gray-200);border-radius:8px;padding:7px 10px;font-family:'Poppins',sans-serif;font-size:1rem;font-weight:700;text-align:center;outline:none;transition:border-color .2s}
+.grade-inp:focus{border-color:var(--red)}
+.save-btn{background:var(--red);color:white;border:none;padding:8px 14px;border-radius:8px;font-family:'Poppins',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;transition:all .2s}
+.save-btn:hover{background:#b71c1c}
+.saved-ok{display:none;color:var(--green);font-size:.78rem;font-weight:700}
+.task-total{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:2px solid var(--gray-200);margin-top:4px}
+.total-pts{font-family:'Nunito',sans-serif;font-weight:900;font-size:1.1rem}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);padding:12px 24px;border-radius:30px;font-family:'Poppins',sans-serif;font-size:.88rem;font-weight:700;box-shadow:0 4px 20px rgba(0,0,0,.15);z-index:9999;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{background:var(--green-light);color:var(--green)}
+.toast.err{background:var(--red-light);color:var(--red)}
+.toast.info{background:var(--blue-light);color:var(--blue)}
+
+#mainPanel{display:none}
+@media(max-width:600px){.lock-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-box">
+    <div class="login-logo">🔐</div>
+    <h1>Panel del Maestro</h1>
+    <p>Unidad 3.4 — Los organismos y el ambiente<br>Ingresa tu contraseña para continuar</p>
+    <input class="login-input" type="password" id="pwInput" placeholder="••••••" maxlength="30">
+    <div class="login-error" id="pwErr"></div>
+    <button class="login-btn" onclick="doLogin()">Entrar →</button>
+  </div>
+</div>
+
+<!-- MAIN PANEL -->
+<div id="mainPanel">
+  <header>
+    <div>
+      <h1>🔐 Panel del Maestro</h1>
+      <p>Unidad 3.4 • Los organismos y el ambiente • Grado 3</p>
+    </div>
+    <div class="hdr-btns">
+      <a class="hdr-link" href="index.html" target="_blank">👀 Ver página estudiantes</a>
+      <button class="hdr-out" onclick="doLogout()">Salir</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showTab('candados',this)">🔒 Candados</button>
+      <button class="tab-btn" onclick="showTab('respuestas',this)">📋 Respuestas</button>
+      <button class="tab-btn" onclick="showTab('puntuaciones',this)">📊 Puntuaciones</button>
+      <button class="tab-btn" onclick="showTab('registro',this)">📁 Registro</button>
+    </div>
+
+    <!-- CANDADOS -->
+    <div class="panel active" id="p-candados">
+      <div class="panel-title">Control de acceso por día</div>
+      <div class="panel-sub">Los cambios se aplican en segundos a todos los dispositivos de los estudiantes.</div>
+      <div class="rt-bar"><div class="pulse"></div>Conectado en tiempo real con Firebase</div>
+      <div class="action-bar">
+        <button class="act-btn act-green" onclick="unlockAll()">🔓 Desbloquear todos</button>
+        <button class="act-btn act-red" onclick="lockAll()">🔒 Bloquear todos</button>
+        <button class="act-btn act-blue" onclick="refreshStates()">🔄 Actualizar estado</button>
+      </div>
+      <div class="lock-grid">
+        <div class="lock-card is-locked" id="lc-lunes">
+          <span class="lc-icon" id="ico-lunes">🔒</span>
+          <div class="lc-day" style="color:#1a73e8">📘 LUNES</div>
+          <div class="lc-topic">Biótico y Abiótico</div>
+          <div class="lc-status" id="st-lunes">Bloqueado</div>
+          <button class="lc-btn lc-open" id="btn-lunes" onclick="toggleDay('lunes')">🔓 Desbloquear</button>
+        </div>
+        <div class="lock-card is-locked" id="lc-martes">
+          <span class="lc-icon" id="ico-martes">🔒</span>
+          <div class="lc-day" style="color:#0f9d58">📗 MARTES</div>
+          <div class="lc-topic">Ecosistemas</div>
+          <div class="lc-status" id="st-martes">Bloqueado</div>
+          <button class="lc-btn lc-open" id="btn-martes" onclick="toggleDay('martes')">🔓 Desbloquear</button>
+        </div>
+        <div class="lock-card is-locked" id="lc-miercoles">
+          <span class="lc-icon" id="ico-miercoles">🔒</span>
+          <div class="lc-day" style="color:#e6a817">📙 MIÉRCOLES</div>
+          <div class="lc-topic">Cubierta Corporal</div>
+          <div class="lc-status" id="st-miercoles">Bloqueado</div>
+          <button class="lc-btn lc-open" id="btn-miercoles" onclick="toggleDay('miercoles')">🔓 Desbloquear</button>
+        </div>
+        <div class="lock-card is-locked" id="lc-jueves">
+          <span class="lc-icon" id="ico-jueves">🔒</span>
+          <div class="lc-day" style="color:#e8711a">📒 JUEVES</div>
+          <div class="lc-topic">Camuflaje y Mimetismo</div>
+          <div class="lc-status" id="st-jueves">Bloqueado</div>
+          <button class="lc-btn lc-open" id="btn-jueves" onclick="toggleDay('jueves')">🔓 Desbloquear</button>
+        </div>
+        <div class="lock-card is-locked" id="lc-viernes">
+          <span class="lc-icon" id="ico-viernes">🔒</span>
+          <div class="lc-day" style="color:#9334e6">📓 VIERNES</div>
+          <div class="lc-topic">Repaso General</div>
+          <div class="lc-status" id="st-viernes">Bloqueado</div>
+          <button class="lc-btn lc-open" id="btn-viernes" onclick="toggleDay('viernes')">🔓 Desbloquear</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESPUESTAS -->
+    <div class="panel" id="p-respuestas">
+      <div class="panel-title">📋 Clave de Respuestas</div>
+      <div class="panel-sub">Respuestas correctas para todas las actividades.</div>
+
+      <div class="ans-day">
+        <div class="ans-day-hdr" style="background:#1a73e8">📘 LUNES — Biótico y Abiótico</div>
+        <div class="ans-day-body">
+          <div class="ans-row"><span class="ans-q">Preg. 1:</span><span class="ans-a" style="color:#1a73e8">b) El sol ☀️</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 2:</span><span class="ans-a" style="color:#1a73e8">c) Roca 🪨 (único abiótico)</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 3:</span><span class="ans-a" style="color:#1a73e8">c) El agua 💧</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 4:</span><span class="ans-a" style="color:#1a73e8">b) Una mariposa 🦋</span></div>
+          <div class="ans-row"><span class="ans-q">Blank 1:</span><span class="ans-a" style="color:#1a73e8">abióticos</span></div>
+          <div class="ans-row"><span class="ans-q">Blank 2:</span><span class="ans-a" style="color:#1a73e8">bióticos</span></div>
+          <div class="ans-row"><span class="ans-q">Blank 3:</span><span class="ans-a" style="color:#1a73e8">biocenosis</span></div>
+          <div class="ans-row"><span class="ans-q">Blank 4:</span><span class="ans-a" style="color:#1a73e8">ecología</span></div>
+          <div class="ans-row"><span class="ans-q">Abierta:</span><span class="ans-a" style="color:#1a73e8">✏️ Calificar manualmente (máx. 4 pts)</span></div>
+        </div>
+      </div>
+
+      <div class="ans-day">
+        <div class="ans-day-hdr" style="background:#0f9d58">📗 MARTES — Ecosistemas</div>
+        <div class="ans-day-body">
+          <div class="ans-row"><span class="ans-q">Arrastrar:</span><span class="ans-a" style="color:#0f9d58">Terrestre: Desierto, Bosque, Sabana | Acuático: Arrecife, Río, Océano</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 1:</span><span class="ans-a" style="color:#0f9d58">b) Hábitat = entorno; Ecosistema = más amplio</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 2:</span><span class="ans-a" style="color:#0f9d58">a) Sistema natural de componentes que se relacionan</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 3:</span><span class="ans-a" style="color:#0f9d58">c) Bosque tropical 🌿</span></div>
+          <div class="ans-row"><span class="ans-q">Abierta:</span><span class="ans-a" style="color:#0f9d58">✏️ Calificar manualmente (máx. 4 pts)</span></div>
+        </div>
+      </div>
+
+      <div class="ans-day">
+        <div class="ans-day-hdr" style="background:#e6a817">📙 MIÉRCOLES — Cubierta Corporal</div>
+        <div class="ans-day-body">
+          <div class="ans-row"><span class="ans-q">Arrastrar:</span><span class="ans-a" style="color:#e6a817">Escamas: Pez, Serpiente | Pelaje: Perro, Oso polar | Plumas: Pato, Águila</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 1:</span><span class="ans-a" style="color:#e6a817">b) Proteger a los peces en su medio ambiente</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 2:</span><span class="ans-a" style="color:#e6a817">c) Pelo grueso y largo</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 3:</span><span class="ans-a" style="color:#e6a817">b) Tendría frío y sus órganos podrían lastimarse</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 4:</span><span class="ans-a" style="color:#e6a817">a) Las escamas lo protegen en agua y tierra</span></div>
+          <div class="ans-row"><span class="ans-q">Blank 1:</span><span class="ans-a" style="color:#e6a817">escamas</span></div>
+          <div class="ans-row"><span class="ans-q">Blank 2:</span><span class="ans-a" style="color:#e6a817">pelos</span></div>
+          <div class="ans-row"><span class="ans-q">Blank 3:</span><span class="ans-a" style="color:#e6a817">plumas</span></div>
+        </div>
+      </div>
+
+      <div class="ans-day">
+        <div class="ans-day-hdr" style="background:#e8711a">📒 JUEVES — Camuflaje y Mimetismo</div>
+        <div class="ans-day-body">
+          <div class="ans-row"><span class="ans-q">Preg. 1:</span><span class="ans-a" style="color:#e8711a">b) Camuflaje</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 2:</span><span class="ans-a" style="color:#e8711a">b) Mimetismo</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 3:</span><span class="ans-a" style="color:#e8711a">c) Las adaptaciones de la naturaleza</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 4:</span><span class="ans-a" style="color:#e8711a">b) Su camuflaje</span></div>
+          <div class="ans-row"><span class="ans-q">Blank 1:</span><span class="ans-a" style="color:#e8711a">camuflaje</span></div>
+          <div class="ans-row"><span class="ans-q">Blank 2:</span><span class="ans-a" style="color:#e8711a">mimetismo</span></div>
+          <div class="ans-row"><span class="ans-q">Blank 3:</span><span class="ans-a" style="color:#e8711a">depredadores</span></div>
+          <div class="ans-row"><span class="ans-q">Blank 4:</span><span class="ans-a" style="color:#e8711a">adaptación</span></div>
+          <div class="ans-row"><span class="ans-q">Abierta:</span><span class="ans-a" style="color:#e8711a">✏️ Calificar manualmente (máx. 4 pts)</span></div>
+        </div>
+      </div>
+
+      <div class="ans-day">
+        <div class="ans-day-hdr" style="background:#9334e6">📓 VIERNES — Repaso General</div>
+        <div class="ans-day-body">
+          <div class="ans-row"><span class="ans-q">Preg. 1:</span><span class="ans-a" style="color:#9334e6">b) Conjunto de seres vivos y no vivos que se afectan</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 2:</span><span class="ans-a" style="color:#9334e6">c) El sol ☀️</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 3:</span><span class="ans-a" style="color:#9334e6">c) Confundirse con su ambiente</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 4:</span><span class="ans-a" style="color:#9334e6">b) Un animal se asemeja a otro para protegerse</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 5:</span><span class="ans-a" style="color:#9334e6">a) Las mantienen secas y flotando</span></div>
+          <div class="ans-row"><span class="ans-q">Arrastrar:</span><span class="ans-a" style="color:#9334e6">Biótico: Árbol, Mariposa, Pez | Abiótico: Sol, Agua, Roca</span></div>
+          <div class="ans-row"><span class="ans-q">Abierta:</span><span class="ans-a" style="color:#9334e6">✏️ Calificar manualmente (máx. 8 pts)</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PUNTUACIONES -->
+    <div class="panel" id="p-puntuaciones">
+      <div class="panel-title">📊 Puntuaciones por Día</div>
+      <div class="panel-sub">Tabla de puntuaciones organizadas por día. Puntuación automática + nota abierta sumadas.</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+        <button class="load-btn" onclick="loadPuntuaciones()">🔄 Cargar / Actualizar</button>
+        <button class="load-btn" style="background:#d93025" onclick="borrarCeros()">🗑️ Borrar entregas con 0 pts</button>
+        <button class="load-btn" style="background:#e8711a" onclick="borrarPorDia()">🗑️ Borrar por día específico</button>
+      </div>
+      <div id="puntuacionesTables"><div class="loading">Presiona el botón para cargar las puntuaciones.</div></div>
+    </div>
+
+    <!-- REGISTRO -->
+    <div class="panel" id="p-registro">
+      <div class="panel-title">📊 Registro de Estudiantes</div>
+      <div class="panel-sub">Haz clic en un estudiante para ver sus tareas y calificar preguntas abiertas.</div>
+      <button class="load-btn" onclick="loadRegistro()">🔄 Cargar / Actualizar registro</button>
+      <div id="studentList"><div class="loading">Presiona el botón para cargar las entregas.</div></div>
+      <div id="studentDetail" style="display:none">
+        <button class="back-btn" onclick="backToList()">← Volver a la lista</button>
+        <div class="detail-name" id="detailName"></div>
+        <div id="detailCards"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase as regular scripts (NOT module) to avoid scope issues -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<script>
+// ── Firebase init ──
+const firebaseConfig = {
+  apiKey: "AIzaSyB7AMIGXxRUCZxuGghRkkc8-iSSxpMOKsU",
+  authDomain: "tareas-organismos.firebaseapp.com",
+  projectId: "tareas-organismos",
+  storageBucket: "tareas-organismos.firebasestorage.app",
+  messagingSenderId: "16309300432",
+  appId: "1:16309300432:web:58a9c819470b871997c2d5"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ── Auth ──
+const PW = "maestro2024";
+function doLogin() {
+  const v = document.getElementById('pwInput').value;
+  if (v === PW) {
+    document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('mainPanel').style.display = 'block';
+    document.getElementById('pwErr').textContent = '';
+    refreshStates();
+  } else {
+    document.getElementById('pwErr').textContent = '❌ Contraseña incorrecta.';
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwInput').focus();
+  }
+}
+function doLogout() {
+  document.getElementById('mainPanel').style.display = 'none';
+  document.getElementById('loginWrap').style.display = 'flex';
+  document.getElementById('pwInput').value = '';
+}
+document.getElementById('pwInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+// ── Tabs ──
+function showTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('p-' + name).classList.add('active');
+  if (name === 'registro') loadRegistro();
+  if (name === 'puntuaciones') loadPuntuaciones();
+}
+
+// ── Lock state ──
+let dayStates = { lunes: false, martes: false, miercoles: false, jueves: false, viernes: false };
+
+async function refreshStates() {
+  try {
+    const snap = await db.collection('configuracion').doc('candados').get();
+    if (snap.exists) {
+      const data = snap.data();
+      Object.keys(dayStates).forEach(d => { dayStates[d] = data[d] === true; });
+    }
+    renderCards();
+    toast('Sincronizado con Firebase ✅', 'ok');
+  } catch (e) {
+    toast('Error conectando con Firebase: ' + e.message, 'err');
+  }
+}
+
+async function toggleDay(day) {
+  const btn = document.getElementById('btn-' + day);
+  btn.disabled = true;
+  btn.textContent = '⏳ Guardando...';
+  dayStates[day] = !dayStates[day];
+  try {
+    await db.collection('configuracion').doc('candados').set(dayStates);
+    renderCards();
+    const label = { lunes:'Lunes', martes:'Martes', miercoles:'Miércoles', jueves:'Jueves', viernes:'Viernes' }[day];
+    toast((dayStates[day] ? '🔓 ' : '🔒 ') + label + (dayStates[day] ? ' desbloqueado' : ' bloqueado') + ' para todos.', 'ok');
+  } catch (e) {
+    dayStates[day] = !dayStates[day];
+    renderCards();
+    toast('Error guardando: ' + e.message, 'err');
+  }
+}
+
+async function unlockAll() {
+  Object.keys(dayStates).forEach(d => dayStates[d] = true);
+  try {
+    await db.collection('configuracion').doc('candados').set(dayStates);
+    renderCards();
+    toast('🔓 Todos los días desbloqueados para los estudiantes.', 'ok');
+  } catch (e) {
+    toast('Error: ' + e.message, 'err');
+  }
+}
+
+async function lockAll() {
+  Object.keys(dayStates).forEach(d => dayStates[d] = false);
+  try {
+    await db.collection('configuracion').doc('candados').set(dayStates);
+    renderCards();
+    toast('🔒 Todos los días bloqueados.', 'ok');
+  } catch (e) {
+    toast('Error: ' + e.message, 'err');
+  }
+}
+
+function renderCards() {
+  const DAYS = ['lunes','martes','miercoles','jueves','viernes'];
+  DAYS.forEach(day => {
+    const open = dayStates[day] === true;
+    const card = document.getElementById('lc-' + day);
+    const btn  = document.getElementById('btn-' + day);
+    const ico  = document.getElementById('ico-' + day);
+    const st   = document.getElementById('st-' + day);
+    if (!card) return;
+    card.className = 'lock-card ' + (open ? 'is-open' : 'is-locked');
+    ico.textContent = open ? '✅' : '🔒';
+    st.textContent  = open ? 'Disponible para estudiantes' : 'Bloqueado';
+    st.style.color  = open ? '#0f9d58' : '#9aa0a6';
+    btn.disabled    = false;
+    btn.textContent = open ? '🔒 Bloquear' : '🔓 Desbloquear';
+    btn.className   = 'lc-btn ' + (open ? 'lc-close' : 'lc-open');
+  });
+}
+
+// ── Borrar por día ──
+async function borrarPorDia() {
+  const dia = prompt('¿Qué día quieres borrar completamente?\nEscribe exactamente: Lunes, Martes, Miércoles, Jueves o Viernes');
+  if (!dia) return;
+  const dias = ['Lunes','Martes','Miércoles','Jueves','Viernes'];
+  if (!dias.includes(dia)) { alert('❌ Día no válido. Escribe exactamente como aparece.'); return; }
+  const confirm1 = confirm('🗑️ ¿Borrar TODAS las entregas del ' + dia + '?\n\nEsto no se puede deshacer.');
+  if (!confirm1) return;
+  try {
+    toast('⏳ Borrando ' + dia + '...', 'info');
+    const snap = await db.collection('tareas_3_4').where('dia','==',dia).get();
+    if (snap.empty) { toast('No hay entregas de ' + dia + '.', 'ok'); return; }
+    const batch = db.batch();
+    snap.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
+    toast('✅ ' + snap.size + ' entregas del ' + dia + ' borradas.', 'ok');
+    loadPuntuaciones();
+  } catch(e) {
+    toast('❌ Error: ' + e.message, 'err');
+  }
+}
+
+// ── Borrar entregas con 0 ──
+async function borrarCeros() {
+  const confirm1 = confirm('🗑️ ¿Borrar TODAS las entregas con puntuación de 0?\n\nEsto no se puede deshacer. Los estudiantes tendrán que volver a entregar.');
+  if (!confirm1) return;
+  try {
+    toast('⏳ Borrando...', 'info');
+    // Fetch ALL docs and filter client-side to catch both "0" string and 0 number
+    const snap = await db.collection('tareas_3_4').get();
+    const batch = db.batch();
+    let count = 0;
+    snap.forEach(doc => {
+      const d = doc.data();
+      const pts = parseInt(d.puntuacionAutomatica) || 0;
+      if (pts === 0) { batch.delete(doc.ref); count++; }
+    });
+    if (count === 0) { toast('No hay entregas con 0 pts.', 'ok'); return; }
+    await batch.commit();
+    toast('✅ ' + count + ' entregas con 0 borradas correctamente.', 'ok');
+    loadPuntuaciones();
+  } catch(e) {
+    toast('❌ Error: ' + e.message, 'err');
+  }
+}
+
+// ── Puntuaciones por Día ──
+async function loadPuntuaciones() {
+  const container = document.getElementById('puntuacionesTables');
+  container.innerHTML = '<div class="loading">⏳ Cargando puntuaciones...</div>';
+  try {
+    const snap = await db.collection('tareas_3_4').orderBy('timestamp','asc').get();
+    const docs = [];
+    snap.forEach(d => docs.push({ id: d.id, ...d.data() }));
+
+    if (!docs.length) {
+      container.innerHTML = '<div class="loading">📭 No hay entregas aún.</div>';
+      return;
+    }
+
+    const DAYS_ORDER = ['Lunes','Martes','Miércoles','Jueves','Viernes'];
+    const DAY_BG = {
+      Lunes:'#1a73e8', Martes:'#0f9d58',
+      'Miércoles':'#e6a817', Jueves:'#e8711a', Viernes:'#9334e6'
+    };
+    const DAY_ICONS2 = {
+      Lunes:'📘', Martes:'📗',
+      'Miércoles':'📙', Jueves:'📒', Viernes:'📓'
+    };
+    const MAX_PTS = {
+      Lunes:20, Martes:22,
+      'Miércoles':26, Jueves:20, Viernes:30
+    };
+
+    // Group by day
+    const byDay = {};
+    DAYS_ORDER.forEach(d => byDay[d] = []);
+    docs.forEach(doc => {
+      const dia = doc.dia || 'Sin día';
+      if (!byDay[dia]) byDay[dia] = [];
+      byDay[dia].push(doc);
+    });
+
+    let html = '';
+
+    DAYS_ORDER.forEach(day => {
+      const entries = byDay[day];
+      if (!entries.length) return;
+
+      const color = DAY_BG[day] || '#9aa0a6';
+      const icon  = DAY_ICONS2[day] || '📄';
+      const maxPts = MAX_PTS[day] || '—';
+
+      // Sort by name
+      entries.sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
+
+      // Summary stats
+      const totals = entries.map(e => {
+        const auto = parseInt(e.puntuacionAutomatica) || 0;
+        const open = parseInt(e.notaAbierta) || 0;
+        return auto + open;
+      });
+      const avg = totals.length ? Math.round(totals.reduce((a,b)=>a+b,0) / totals.length) : 0;
+      const highest = Math.max(...totals);
+      const submitted = entries.length;
+
+      html += '<div class="pts-day-block">';
+
+      // Summary cards
+      html += '<div class="pts-summary">'
+        + '<div class="pts-summary-card"><div class="sc-num" style="color:' + color + '">' + submitted + '</div><div class="sc-lbl">Entregas</div></div>'
+        + '<div class="pts-summary-card"><div class="sc-num" style="color:' + color + '">' + avg + '</div><div class="sc-lbl">Promedio</div></div>'
+        + '<div class="pts-summary-card"><div class="sc-num" style="color:' + color + '">' + highest + '</div><div class="sc-lbl">Mayor puntuación</div></div>'
+        + '<div class="pts-summary-card"><div class="sc-num" style="color:' + color + '">' + maxPts + '</div><div class="sc-lbl">Puntos posibles</div></div>'
+        + '</div>';
+
+      // Table
+      html += '<div class="pts-day-title" style="background:' + color + '">'
+        + icon + ' ' + day
+        + '</div>'
+        + '<table class="pts-table">'
+        + '<thead style="background:' + color + 'dd">'
+        + '<tr>'
+        + '<th>#</th>'
+        + '<th>Estudiante</th>'
+        + '<th>Auto</th>'
+        + '<th>Abierta</th>'
+        + '<th>Total</th>'
+        + '<th>Fecha</th>'
+        + '</tr></thead><tbody>';
+
+      let grandTotal = 0;
+      entries.forEach((e, idx) => {
+        const auto  = parseInt(e.puntuacionAutomatica) || 0;
+        const open  = parseInt(e.notaAbierta) || 0;
+        const total = auto + open;
+        grandTotal += total;
+
+        // Color code total
+        const pct = maxPts > 0 ? total / maxPts : 0;
+        const scoreColor = pct >= 0.8 ? '#0f9d58' : pct >= 0.6 ? '#e6a817' : '#d93025';
+
+        // Date short
+        const fecha = e.fechaEntrega ? e.fechaEntrega.split(',')[0] : '—';
+
+        html += '<tr>'
+          + '<td><span class="pts-rank" style="background:' + color + '22;color:' + color + '">' + (idx+1) + '</span></td>'
+          + '<td>' + (e.nombre || 'Sin nombre') + '</td>'
+          + '<td class="pts-auto">' + auto + ' pts</td>'
+          + '<td class="pts-open">' + (e.notaAbierta !== undefined ? open + ' pts' : '<span class="pts-dash">—</span>') + '</td>'
+          + '<td><span class="pts-score" style="color:' + scoreColor + '">' + total + ' / ' + maxPts + '</span></td>'
+          + '<td style="font-size:.75rem;color:var(--gray-600)">' + fecha + '</td>'
+          + '</tr>';
+      });
+
+      // Grand total row
+      const grandAvg = entries.length ? Math.round(grandTotal / entries.length) : 0;
+      html += '<tr class="pts-total-row">'
+        + '<td colspan="2">📊 Promedio del grupo</td>'
+        + '<td colspan="3" style="color:' + color + '">' + grandAvg + ' / ' + maxPts + ' pts</td>'
+        + '<td></td>'
+        + '</tr>';
+
+      html += '</tbody></table></div>';
+    });
+
+    container.innerHTML = html;
+
+  } catch(e) {
+    container.innerHTML = '<div class="loading" style="color:#d93025">❌ Error: ' + e.message + '</div>';
+  }
+}
+
+// ── Registro ──
+let allDocs = [];
+const DAY_COLORS = { lunes:'#1a73e8', martes:'#0f9d58', miercoles:'#e6a817', jueves:'#e8711a', viernes:'#9334e6' };
+const DAY_ICONS  = { lunes:'📘', martes:'📗', miercoles:'📙', jueves:'📒', viernes:'📓' };
+const MAX_OPEN   = { lunes:4, martes:4, miercoles:0, jueves:4, viernes:8 };
+
+async function loadRegistro() {
+  document.getElementById('studentList').innerHTML = '<div class="loading">⏳ Cargando entregas...</div>';
+  document.getElementById('studentDetail').style.display = 'none';
+  try {
+    const snap = await db.collection('tareas_3_4').orderBy('timestamp','desc').get();
+    allDocs = [];
+    snap.forEach(d => allDocs.push({ id: d.id, ...d.data() }));
+    renderList();
+  } catch (e) {
+    document.getElementById('studentList').innerHTML = '<div class="loading" style="color:#d93025">❌ Error: ' + e.message + '</div>';
+  }
+}
+
+function renderList() {
+  const el = document.getElementById('studentList');
+  if (!allDocs.length) { el.innerHTML = '<div class="loading">📭 No hay entregas aún.</div>'; return; }
+  const byStudent = {};
+  allDocs.forEach(d => {
+    const n = d.nombre || 'Sin nombre';
+    if (!byStudent[n]) byStudent[n] = [];
+    byStudent[n].push(d);
+  });
+  const sorted = Object.entries(byStudent).sort((a, b) => a[0].localeCompare(b[0]));
+  let html = '<div class="list-count">' + sorted.length + ' estudiante' + (sorted.length !== 1 ? 's' : '') + ' con entregas</div>';
+  sorted.forEach(([name, tasks]) => {
+    const dayKey = d => (d.dia || '').toLowerCase();
+    const chips = tasks.map(t => {
+      const k = dayKey(t);
+      const c = DAY_COLORS[k] || '#9aa0a6';
+      const i = DAY_ICONS[k]  || '📄';
+      return '<span class="day-chip" style="background:' + c + '22;color:' + c + ';border:1px solid ' + c + '">' + i + ' ' + t.dia + '</span>';
+    }).join('');
+    html += '<div class="st-row" onclick="showDetail(\'' + encodeURIComponent(name) + '\')">'
+      + '<div class="st-avatar">' + name.charAt(0).toUpperCase() + '</div>'
+      + '<div><div class="st-name">' + name + '</div><div class="st-chips">' + chips + '</div></div>'
+      + '<div class="st-arrow">→</div></div>';
+  });
+  el.innerHTML = html;
+}
+
+function showDetail(enc) {
+  const name = decodeURIComponent(enc);
+  const tasks = allDocs.filter(d => (d.nombre || 'Sin nombre') === name)
+    .sort((a, b) => {
+      const order = ['Lunes','Martes','Miércoles','Jueves','Viernes'];
+      return order.indexOf(a.dia) - order.indexOf(b.dia);
+    });
+  document.getElementById('detailName').textContent = '👤 ' + name;
+  let html = '';
+  tasks.forEach(t => {
+    const k     = (t.dia || '').toLowerCase();
+    const color = DAY_COLORS[k] || '#9aa0a6';
+    const icon  = DAY_ICONS[k]  || '📄';
+    const maxO  = MAX_OPEN[k]   || 0;
+    const auto  = parseInt(t.puntuacionAutomatica) || 0;
+    const open  = parseInt(t.notaAbierta) || 0;
+    const total = auto + open;
+    html += '<div class="task-card">'
+      + '<div class="task-hdr" style="background:' + color + '">'
+      + '<span>' + icon + ' ' + t.dia + '</span>'
+      + '<span style="font-size:.8rem;opacity:.85">' + (t.fechaEntrega || '') + '</span>'
+      + '</div>'
+      + '<div class="task-body">'
+      + '<div class="task-row">'
+      + '<span class="task-lbl">📊 Puntuación automática</span>'
+      + '<span class="score-pill" style="background:' + color + '22;color:' + color + '">' + auto + ' / ' + (t.puntuacionMaximaAuto || '—') + ' pts</span>'
+      + '</div>';
+
+    if (t.respuestaAbierta) {
+      html += '<div class="task-row col">'
+        + '<span class="task-lbl">✏️ Respuesta abierta</span>'
+        + '<div class="open-box">' + t.respuestaAbierta + '</div>'
+        + '</div>';
+    } else {
+      html += '<div class="task-row"><span class="task-lbl" style="color:#9aa0a6;font-style:italic">Sin respuesta abierta este día.</span></div>';
+    }
+
+    if (maxO > 0) {
+      html += '<div class="task-row grade-row">'
+        + '<span class="task-lbl">🎯 Nota pregunta abierta (máx. ' + maxO + ' pts)</span>'
+        + '<div class="grade-ctrl">'
+        + '<input class="grade-inp" type="number" min="0" max="' + maxO + '" value="' + (t.notaAbierta || '') + '" placeholder="0" id="gi-' + t.id + '">'
+        + '<button class="save-btn" onclick="saveGrade(\'' + t.id + '\',' + maxO + ')">💾 Guardar</button>'
+        + '<span class="saved-ok" id="so-' + t.id + '">✅ Guardado</span>'
+        + '</div></div>';
+    }
+
+    html += '<div class="task-total">'
+      + '<span class="task-lbl">🏆 Total</span>'
+      + '<span class="total-pts" style="color:' + color + '" id="tot-' + t.id + '">' + total + ' pts</span>'
+      + '</div></div></div>';
+  });
+  document.getElementById('detailCards').innerHTML = html;
+  document.getElementById('studentDetail').style.display = 'block';
+  document.getElementById('studentDetail').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function backToList() {
+  document.getElementById('studentDetail').style.display = 'none';
+  document.getElementById('studentList').scrollIntoView({ behavior: 'smooth' });
+}
+
+async function saveGrade(docId, maxO) {
+  const inp = document.getElementById('gi-' + docId);
+  const val = parseInt(inp.value);
+  if (isNaN(val) || val < 0 || val > maxO) { alert('⚠️ Ingresa un número entre 0 y ' + maxO); return; }
+  try {
+    await db.collection('tareas_3_4').doc(docId).update({ notaAbierta: val });
+    const badge = document.getElementById('so-' + docId);
+    if (badge) { badge.style.display = 'inline'; setTimeout(() => badge.style.display = 'none', 3000); }
+    const entry = allDocs.find(d => d.id === docId);
+    if (entry) {
+      entry.notaAbierta = val;
+      const totEl = document.getElementById('tot-' + docId);
+      if (totEl) totEl.textContent = ((parseInt(entry.puntuacionAutomatica) || 0) + val) + ' pts';
+    }
+  } catch (e) {
+    alert('❌ Error guardando: ' + e.message);
+  }
+}
+
+// ── Toast ──
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + (type || 'info');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => el.className = 'toast', 4000);
+}
+</script>
+</body>
+</html>
