@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel del Maestro — Los Fósiles</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--red:#d93025;--red-light:#fce8e6;--green:#0f9d58;--green-light:#e6f4ea;--blue:#1a73e8;--blue-light:#e8f0fe;--brown:#5D4037;--dirt:#D4A04A;--gray-50:#f8f9fa;--gray-200:#e8eaed;--gray-400:#9aa0a6;--gray-600:#5f6368;--text:#202124}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Poppins',sans-serif;background:#f0ebe0;color:var(--text);min-height:100vh}
+.login-wrap{position:fixed;inset:0;background:linear-gradient(135deg,#3E2723,#6D4C41);display:flex;align-items:center;justify-content:center;z-index:999}
+.login-box{background:white;border-radius:24px;padding:44px 36px;max-width:380px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.login-logo{font-size:3rem;margin-bottom:12px}
+.login-box h1{font-family:'Nunito',sans-serif;font-size:1.5rem;font-weight:900;margin-bottom:6px;color:#3E2723}
+.login-box p{font-size:.85rem;color:var(--gray-600);margin-bottom:24px}
+.login-input{width:100%;border:2px solid var(--gray-200);border-radius:12px;padding:14px;font-family:'Poppins',sans-serif;font-size:1.1rem;text-align:center;letter-spacing:6px;outline:none;margin-bottom:6px;transition:border-color .2s}
+.login-input:focus{border-color:#5D4037}
+.login-error{color:var(--red);font-size:.8rem;font-weight:700;height:20px;margin-bottom:10px}
+.login-btn{width:100%;padding:14px;border:none;border-radius:12px;background:#5D4037;color:white;font-family:'Poppins',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;transition:all .2s}
+.login-btn:hover{background:#3E2723}
+header{background:linear-gradient(135deg,#3E2723,#5D4037);color:white;padding:16px 28px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 10px rgba(0,0,0,.25);border-bottom:3px solid var(--dirt)}
+header h1{font-family:'Nunito',sans-serif;font-size:1.2rem;font-weight:900}
+header p{font-size:.75rem;opacity:.85;margin-top:2px;color:#BCAAA4}
+.hdr-btns{display:flex;gap:10px;align-items:center}
+.hdr-link{background:rgba(255,255,255,.15);color:white;text-decoration:none;padding:7px 14px;border-radius:20px;font-size:.78rem;font-weight:700}
+.hdr-link:hover{background:rgba(255,255,255,.25)}
+.hdr-out{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:white;padding:7px 14px;border-radius:20px;font-size:.78rem;font-weight:700;cursor:pointer}
+.hdr-out:hover{background:rgba(255,255,255,.2)}
+.main{max-width:960px;margin:0 auto;padding:28px 18px}
+.tabs{display:flex;background:white;border-radius:14px;padding:6px;margin-bottom:22px;box-shadow:0 2px 8px rgba(0,0,0,.07);gap:6px}
+.tab-btn{flex:1;padding:11px;border:none;background:transparent;font-family:'Poppins',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;border-radius:10px;color:var(--gray-600);transition:all .2s}
+.tab-btn:hover{background:var(--gray-50)}
+.tab-btn.active{background:#5D4037;color:white}
+.panel{background:white;border-radius:16px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.07);display:none}
+.panel.active{display:block}
+.panel-title{font-family:'Nunito',sans-serif;font-size:1.1rem;font-weight:900;margin-bottom:4px}
+.panel-sub{font-size:.8rem;color:var(--gray-600);margin-bottom:20px}
+.rt-bar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--green-light);border-radius:10px;margin-bottom:18px;font-size:.82rem;font-weight:600;color:var(--green)}
+.pulse{width:10px;height:10px;border-radius:50%;background:var(--green);flex-shrink:0;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+.action-bar{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+.act-btn{padding:9px 18px;border:none;border-radius:20px;font-family:'Poppins',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;transition:all .2s}
+.act-green{background:var(--green-light);color:var(--green)}.act-green:hover{background:#b8dfc9}
+.act-red{background:var(--red-light);color:var(--red)}.act-red:hover{background:#f5c6c3}
+.act-blue{background:var(--blue-light);color:var(--blue)}.act-blue:hover{background:#c5d9f8}
+.lock-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:14px}
+.lock-card{border-radius:14px;padding:18px 14px;text-align:center;border:2px solid;transition:all .3s}
+.lock-card.is-locked{background:var(--gray-50);border-color:var(--gray-200)}
+.lock-card.is-open{background:var(--green-light);border-color:var(--green)}
+.lc-icon{font-size:2rem;margin-bottom:8px;display:block}
+.lc-day{font-family:'Nunito',sans-serif;font-weight:900;font-size:.95rem;margin-bottom:2px}
+.lc-topic{font-size:.72rem;color:var(--gray-600);margin-bottom:8px}
+.lc-status{font-size:.72rem;font-weight:700;margin-bottom:12px}
+.lc-btn{width:100%;padding:9px;border:none;border-radius:8px;font-family:'Poppins',sans-serif;font-size:.78rem;font-weight:700;cursor:pointer;transition:all .2s}
+.lc-btn:disabled{opacity:.6;cursor:wait}
+.lc-open{background:var(--green);color:white}.lc-open:hover:not(:disabled){background:#0b7a42}
+.lc-close{background:var(--red-light);color:var(--red)}.lc-close:hover:not(:disabled){background:#f5c6c3}
+.ans-day{border-radius:12px;overflow:hidden;margin-bottom:14px;border:1px solid var(--gray-200)}
+.ans-day-hdr{padding:10px 16px;color:white;font-weight:700;font-size:.9rem}
+.ans-day-body{padding:14px 16px}
+.ans-row{display:flex;gap:12px;margin-bottom:8px;font-size:.83rem}
+.ans-q{font-weight:700;color:var(--gray-600);min-width:110px;flex-shrink:0}
+.ans-a{font-weight:700}
+.load-btn{background:#5D4037;color:white;border:none;padding:9px 20px;border-radius:20px;font-family:'Poppins',sans-serif;font-weight:700;font-size:.82rem;cursor:pointer;margin-bottom:16px;transition:all .2s}
+.load-btn:hover{background:#3E2723}
+.loading{padding:28px;text-align:center;color:var(--gray-400)}
+.st-row{display:flex;align-items:center;gap:14px;padding:14px 16px;border:2px solid var(--gray-200);border-radius:12px;margin-bottom:10px;cursor:pointer;background:white;transition:all .2s}
+.st-row:hover{border-color:#5D4037;box-shadow:0 3px 12px rgba(93,64,55,.15);transform:translateY(-1px)}
+.st-avatar{width:44px;height:44px;border-radius:50%;background:#EFEBE9;color:#5D4037;font-family:'Nunito',sans-serif;font-weight:900;font-size:1.3rem;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.st-name{font-weight:700;font-size:.95rem;margin-bottom:5px}
+.st-chips{display:flex;flex-wrap:wrap;gap:5px}
+.day-chip{font-size:.7rem;font-weight:700;padding:2px 10px;border-radius:20px}
+.st-arrow{color:var(--gray-400);font-size:1.1rem;margin-left:auto}
+.back-btn{background:none;border:none;color:#5D4037;font-family:'Poppins',sans-serif;font-weight:700;font-size:.85rem;cursor:pointer;padding:0;margin-bottom:14px;display:flex;align-items:center;gap:5px}
+.back-btn:hover{text-decoration:underline}
+.detail-name{font-family:'Nunito',sans-serif;font-weight:900;font-size:1.3rem;margin-bottom:16px}
+.task-card{border:1px solid var(--gray-200);border-radius:14px;margin-bottom:14px;overflow:hidden}
+.task-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;color:white;font-weight:700;font-size:.9rem}
+.task-body{padding:14px 16px}
+.task-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px}
+.task-row.col{flex-direction:column;align-items:flex-start}
+.task-lbl{font-size:.8rem;font-weight:700;color:var(--gray-600)}
+.score-pill{padding:3px 14px;border-radius:20px;font-weight:700;font-size:.83rem}
+.open-box{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:10px 12px;font-size:.85rem;line-height:1.6;width:100%;margin-top:5px}
+.grade-row{flex-wrap:wrap;gap:8px}
+.grade-ctrl{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.grade-inp{width:70px;border:2px solid var(--gray-200);border-radius:8px;padding:7px 10px;font-family:'Poppins',sans-serif;font-size:1rem;font-weight:700;text-align:center;outline:none;transition:border-color .2s}
+.grade-inp:focus{border-color:#5D4037}
+.save-btn{background:#5D4037;color:white;border:none;padding:8px 14px;border-radius:8px;font-family:'Poppins',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;transition:all .2s}
+.save-btn:hover{background:#3E2723}
+.saved-ok{display:none;color:var(--green);font-size:.78rem;font-weight:700}
+.task-total{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:2px solid var(--gray-200);margin-top:4px}
+.total-pts{font-family:'Nunito',sans-serif;font-weight:900;font-size:1.1rem}
+.pts-table{width:100%;border-collapse:collapse;border-radius:0 0 12px 12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.pts-table th{padding:10px 14px;text-align:left;font-size:.78rem;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:white}
+.pts-table td{padding:10px 14px;font-size:.88rem;border-bottom:1px solid var(--gray-200);background:white}
+.pts-table tr:last-child td{border-bottom:none}
+.pts-table tr:hover td{background:var(--gray-50)}
+.pts-day-block{margin-bottom:28px}
+.pts-day-title{display:flex;align-items:center;gap:10px;padding:12px 18px;border-radius:12px 12px 0 0;color:white;font-family:'Nunito',sans-serif;font-weight:900;font-size:1rem}
+.list-count{font-size:.8rem;color:var(--gray-600);font-weight:700;margin-bottom:12px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);padding:12px 24px;border-radius:30px;font-family:'Poppins',sans-serif;font-size:.88rem;font-weight:700;box-shadow:0 4px 20px rgba(0,0,0,.15);z-index:9999;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{background:var(--green-light);color:var(--green)}
+.toast.err{background:var(--red-light);color:var(--red)}
+.toast.info{background:var(--blue-light);color:var(--blue)}
+#mainPanel{display:none}
+@medía(max-width:600px){.lock-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-box">
+    <div class="login-logo">&#x1F9B4;</div>
+    <h1>Panel del Maestro</h1>
+    <p>Los Fósiles &mdash; Unidad 3.4<br>Ingresa tu contraseña para continuar</p>
+    <input class="login-input" type="password" id="pwInput" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;" maxlength="30">
+    <div class="login-error" id="pwErr"></div>
+    <button class="login-btn" onclick="doLogin()">Entrar &rarr;</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="mainPanel">
+  <header>
+    <div>
+      <h1>&#x1F9B4; Panel del Maestro &mdash; Los Fósiles</h1>
+      <p>Unidad 3.4 &bull; Tercer Grado &bull; Firebase conectado</p>
+    </div>
+    <div class="hdr-btns">
+      <a class="hdr-link" href="fósiles.html" target="_blank">&#x1F440; Ver página estudíantes</a>
+      <button class="hdr-out" onclick="doLogout()">Salir</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showTab('candados',this)">&#x1F512; Candados</button>
+      <button class="tab-btn" onclick="showTab('respuestas',this)">&#x1F4CB; Respuestas</button>
+      <button class="tab-btn" onclick="showTab('puntuaciónes',this)">&#x1F4CA; Puntuaciónes</button>
+      <button class="tab-btn" onclick="showTab('registro',this)">&#x1F4C1; Registro</button>
+    </div>
+
+    <!-- CANDADOS -->
+    <div class="panel active" id="p-candados">
+      <div class="panel-title">Control de acceso por día</div>
+      <div class="panel-sub">Los cambios se aplican en segundos a todos los dispositivos de los estudíantes.</div>
+      <div class="rt-bar"><div class="pulse"></div>Conectado en tiempo real con Firebase</div>
+      <div class="action-bar">
+        <button class="act-btn act-green" onclick="unlockAll()">&#x1F513; Desbloquear todos</button>
+        <button class="act-btn act-red" onclick="lockAll()">&#x1F512; Bloquear todos</button>
+        <button class="act-btn act-blue" onclick="refreshStates()">&#x1F504; Actualizar estado</button>
+      </div>
+      <div class="lock-grid">
+        <div class="lock-card is-locked" id="lc-lunes">
+          <span class="lc-icon" id="ico-lunes">&#x1F512;</span>
+          <div class="lc-day" style="color:#1a73e8">&#x1F9B4; LUNES</div>
+          <div class="lc-topic">¿Qué es un fósil?</div>
+          <div class="lc-status" id="st-lunes">Bloqueado</div>
+          <button class="lc-btn lc-open" id="btn-lunes" onclick="toggleDay('lunes')">&#x1F513; Desbloquear</button>
+        </div>
+        <div class="lock-card is-locked" id="lc-martes">
+          <span class="lc-icon" id="ico-martes">&#x1F512;</span>
+          <div class="lc-day" style="color:#0f9d58">&#x26CF;&#xFE0F; MARTES</div>
+          <div class="lc-topic">¿Cómo se forman?</div>
+          <div class="lc-status" id="st-martes">Bloqueado</div>
+          <button class="lc-btn lc-open" id="btn-martes" onclick="toggleDay('martes')">&#x1F513; Desbloquear</button>
+        </div>
+        <div class="lock-card is-locked" id="lc-miercoles">
+          <span class="lc-icon" id="ico-miercoles">&#x1F512;</span>
+          <div class="lc-day" style="color:#e6a817">&#x1F50D; MIÉRCOLES</div>
+          <div class="lc-topic">Pistas y extinción</div>
+          <div class="lc-status" id="st-miercoles">Bloqueado</div>
+          <button class="lc-btn lc-open" id="btn-miercoles" onclick="toggleDay('miercoles')">&#x1F513; Desbloquear</button>
+        </div>
+        <div class="lock-card is-locked" id="lc-jueves">
+          <span class="lc-icon" id="ico-jueves">&#x1F512;</span>
+          <div class="lc-day" style="color:#e8711a">&#x1FAA8; JUEVES</div>
+          <div class="lc-topic">Tipos de fósiles</div>
+          <div class="lc-status" id="st-jueves">Bloqueado</div>
+          <button class="lc-btn lc-open" id="btn-jueves" onclick="toggleDay('jueves')">&#x1F513; Desbloquear</button>
+        </div>
+        <div class="lock-card is-locked" id="lc-viernes">
+          <span class="lc-icon" id="ico-viernes">&#x1F512;</span>
+          <div class="lc-day" style="color:#9334e6">&#x1F3C6; VIERNES</div>
+          <div class="lc-topic">Repaso de fósiles</div>
+          <div class="lc-status" id="st-viernes">Bloqueado</div>
+          <button class="lc-btn lc-open" id="btn-viernes" onclick="toggleDay('viernes')">&#x1F513; Desbloquear</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESPUESTAS -->
+    <div class="panel" id="p-respuestas">
+      <div class="panel-title">Clave de Respuestas</div>
+      <div class="panel-sub">Respuestas correctas para todas las actividades de la semana de fósiles.</div>
+
+      <div class="ans-day">
+        <div class="ans-day-hdr" style="background:#1a73e8">LUNES &mdash; ¿Qué es un fósil?</div>
+        <div class="ans-day-body">
+          <div class="ans-row"><span class="ans-q">Preg. 1:</span><span class="ans-a" style="color:#1a73e8">b) Restos o huellas de plantas y animales de hace millones de años</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 2:</span><span class="ans-a" style="color:#1a73e8">c) Paleontólogos</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 3:</span><span class="ans-a" style="color:#1a73e8">b) Que ya no existe ni vive en la Tierra</span></div>
+          <div class="ans-row"><span class="ans-q">Blank 1:</span><span class="ans-a" style="color:#1a73e8">fósiles</span></div>
+          <div class="ans-row"><span class="ans-q">Blank 2:</span><span class="ans-a" style="color:#1a73e8">paleontólogos</span></div>
+          <div class="ans-row"><span class="ans-q">Blank 3:</span><span class="ans-a" style="color:#1a73e8">extintos</span></div>
+          <div class="ans-row"><span class="ans-q">Blank 4:</span><span class="ans-a" style="color:#1a73e8">barro</span></div>
+          <div class="ans-row"><span class="ans-q">Blank 5:</span><span class="ans-a" style="color:#1a73e8">impresiones</span></div>
+          <div class="ans-row"><span class="ans-q">Abierta:</span><span class="ans-a" style="color:#1a73e8">Calificar manualmente</span></div>
+        </div>
+      </div>
+
+      <div class="ans-day">
+        <div class="ans-day-hdr" style="background:#0f9d58">MARTES &mdash; ¿Cómo se forman los fósiles?</div>
+        <div class="ans-day-body">
+          <div class="ans-row"><span class="ans-q">Arrastrar:</span><span class="ans-a" style="color:#0f9d58">Paso 1: Animal muere | Paso 2: Partes blandas se pudren | Paso 3: Se convierte en roca | Paso 4: Erosión lo expone</span></div>
+          <div class="ans-row"><span class="ans-q">VF 1:</span><span class="ans-a" style="color:#0f9d58">F &mdash; Los fósiles NO se forman solo en el agua</span></div>
+          <div class="ans-row"><span class="ans-q">VF 2:</span><span class="ans-a" style="color:#0f9d58">V &mdash; Los paleontólogos estudían fósiles para conocer animales del pasado</span></div>
+          <div class="ans-row"><span class="ans-q">VF 3:</span><span class="ans-a" style="color:#0f9d58">F &mdash; Las partes DURAS (huesos) son las que se conservan, no las blandas</span></div>
+          <div class="ans-row"><span class="ans-q">VF 4:</span><span class="ans-a" style="color:#0f9d58">V &mdash; La erosión si puede exponer un fósil</span></div>
+          <div class="ans-row"><span class="ans-q">Abierta:</span><span class="ans-a" style="color:#0f9d58">Calificar manualmente</span></div>
+        </div>
+      </div>
+
+      <div class="ans-day">
+        <div class="ans-day-hdr" style="background:#e6a817">MIÉRCOLES &mdash; Pistas fósiles y extinción</div>
+        <div class="ans-day-body">
+          <div class="ans-row"><span class="ans-q">Preg. 1:</span><span class="ans-a" style="color:#e6a817">b) Como eran, que comian y como se movian</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 2:</span><span class="ans-a" style="color:#e6a817">b) Estudíando los fósiles que encuentran</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 3:</span><span class="ans-a" style="color:#e6a817">c) Los huesos</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 4:</span><span class="ans-a" style="color:#e6a817">b) Para protegerse del frio en climas helados</span></div>
+          <div class="ans-row"><span class="ans-q">Blank 1:</span><span class="ans-a" style="color:#e6a817">extintos</span></div>
+          <div class="ans-row"><span class="ans-q">Blank 2:</span><span class="ans-a" style="color:#e6a817">dinosaurios</span></div>
+          <div class="ans-row"><span class="ans-q">Blank 3:</span><span class="ans-a" style="color:#e6a817">fósiles</span></div>
+          <div class="ans-row"><span class="ans-q">Blank 4:</span><span class="ans-a" style="color:#e6a817">impresiones</span></div>
+          <div class="ans-row"><span class="ans-q">Abierta:</span><span class="ans-a" style="color:#e6a817">Calificar manualmente</span></div>
+        </div>
+      </div>
+
+      <div class="ans-day">
+        <div class="ans-day-hdr" style="background:#e8711a">JUEVES &mdash; Tipos de fósiles</div>
+        <div class="ans-day-body">
+          <div class="ans-row"><span class="ans-q">Arrastrar:</span><span class="ans-a" style="color:#e8711a">Restos: Hueso, Concha de amonita, Diente T-Rex | Huellas: Huella en roca, Impresion de hoja</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 1:</span><span class="ans-a" style="color:#e8711a">b) Para entender como los seres vivos han cambiado con el tiempo</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 2:</span><span class="ans-a" style="color:#e8711a">b) El mamut lanudo</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 3:</span><span class="ans-a" style="color:#e8711a">b) Era probablemente un carnivoro que cazaba a otros animales</span></div>
+          <div class="ans-row"><span class="ans-q">Abierta:</span><span class="ans-a" style="color:#e8711a">Calificar manualmente</span></div>
+        </div>
+      </div>
+
+      <div class="ans-day">
+        <div class="ans-day-hdr" style="background:#9334e6">VIERNES &mdash; Repaso de fósiles</div>
+        <div class="ans-day-body">
+          <div class="ans-row"><span class="ans-q">Preg. 1:</span><span class="ans-a" style="color:#9334e6">b) Lodo, arcilla o arena</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 2:</span><span class="ans-a" style="color:#9334e6">b) La marca de una pata en la roca</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 3:</span><span class="ans-a" style="color:#9334e6">c) Se descomponen y desaparecen</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 4:</span><span class="ans-a" style="color:#9334e6">b) La erosión del viento y el agua</span></div>
+          <div class="ans-row"><span class="ans-q">Preg. 5:</span><span class="ans-a" style="color:#9334e6">c) El animal estaba adaptado para nadar en el agua</span></div>
+          <div class="ans-row"><span class="ans-q">VF 1:</span><span class="ans-a" style="color:#9334e6">F &mdash; Los fósiles se encuentran en todo el mundo</span></div>
+          <div class="ans-row"><span class="ans-q">VF 2:</span><span class="ans-a" style="color:#9334e6">V &mdash; Los paleontólogos usan herramientas especiales</span></div>
+          <div class="ans-row"><span class="ans-q">VF 3:</span><span class="ans-a" style="color:#9334e6">F &mdash; Un animal extinto NO puede encontrarse vivo</span></div>
+          <div class="ans-row"><span class="ans-q">Abierta:</span><span class="ans-a" style="color:#9334e6">Calificar manualmente</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PUNTUACIONES -->
+    <div class="panel" id="p-puntuaciónes">
+      <div class="panel-title">Puntuaciónes por Día</div>
+      <div class="panel-sub">Tabla de puntuaciónes organizadas por día. Puntuación automática + nota abierta sumadas.</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+        <button class="load-btn" onclick="loadPuntuaciónes()">&#x1F504; Cargar / Actualizar</button>
+        <button class="load-btn" style="background:#d93025" onclick="borrarCeros()">&#x1F5D1;&#xFE0F; Borrar entregas con 0 pts</button>
+        <button class="load-btn" style="background:#e8711a" onclick="borrarPorDia()">&#x1F5D1;&#xFE0F; Borrar por día específico</button>
+      </div>
+      <div id="puntuaciónesTables"><div class="loading">Presiona el botón para cargar las puntuaciónes.</div></div>
+    </div>
+
+    <!-- REGISTRO -->
+    <div class="panel" id="p-registro">
+      <div class="panel-title">Registro de Estudíantes</div>
+      <div class="panel-sub">Haz clic en un estudíante para ver sus tareas y calificar preguntas abiertas.</div>
+      <button class="load-btn" onclick="loadRegistro()">&#x1F504; Cargar / Actualizar registro</button>
+      <div id="studentList"><div class="loading">Presiona el botón para cargar las entregas.</div></div>
+      <div id="studentDetail" style="display:none">
+        <button class="back-btn" onclick="backToList()">&#x2190; Volver a la lista</button>
+        <div class="detail-name" id="detailName"></div>
+        <div id="detailCards"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyB7AMIGXxRUCZxuGghRkkc8-iSSxpMOKsU",
+  authDomain: "tareas-organismos.firebaseapp.com",
+  projectId: "tareas-organismos",
+  storageBucket: "tareas-organismos.firebasestorage.app",
+  messagingSenderId: "16309300432",
+  appId: "1:16309300432:web:58a9c819470b871997c2d5"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ── Auth ──
+const PW = "maestro2024";
+function doLogin() {
+  const v = document.getElementById('pwInput').value;
+  if (v === PW) {
+    document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('mainPanel').style.display = 'block';
+    document.getElementById('pwErr').textContent = '';
+    refreshStates();
+  } else {
+    document.getElementById('pwErr').textContent = 'Contraseña incorrecta.';
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwInput').focus();
+  }
+}
+function doLogout() {
+  document.getElementById('mainPanel').style.display = 'none';
+  document.getElementById('loginWrap').style.display = 'flex';
+  document.getElementById('pwInput').value = '';
+}
+document.getElementById('pwInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+// ── Tabs ──
+function showTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('p-' + name).classList.add('active');
+  if (name === 'registro') loadRegistro();
+  if (name === 'puntuaciónes') loadPuntuaciónes();
+}
+
+// ── Lock state ──
+let dayStates = { lunes: false, martes: false, miercoles: false, jueves: false, viernes: false };
+
+async function refreshStates() {
+  try {
+    const snap = await db.collection('configuracion').doc('candados_fosiles').get();
+    if (snap.exists) {
+      const data = snap.data();
+      Object.keys(dayStates).forEach(d => { dayStates[d] = data[d] === true; });
+    }
+    renderCards();
+    toast('Sincronizado con Firebase', 'ok');
+  } catch (e) {
+    toast('Error conectando con Firebase: ' + e.message, 'err');
+  }
+}
+
+async function toggleDay(day) {
+  const btn = document.getElementById('btn-' + day);
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+  dayStates[day] = !dayStates[day];
+  try {
+    await db.collection('configuracion').doc('candados_fosiles').set(dayStates);
+    renderCards();
+    const label = { lunes:'Lunes', martes:'Martes', miercoles:'Miércoles', jueves:'Jueves', viernes:'Viernes' }[day];
+    toast((dayStates[day] ? 'Desbloqueado: ' : 'Bloqueado: ') + label, 'ok');
+  } catch (e) {
+    dayStates[day] = !dayStates[day];
+    renderCards();
+    toast('Error guardando: ' + e.message, 'err');
+  }
+}
+
+async function unlockAll() {
+  Object.keys(dayStates).forEach(d => dayStates[d] = true);
+  try {
+    await db.collection('configuracion').doc('candados_fosiles').set(dayStates);
+    renderCards();
+    toast('Todos los días desbloqueados.', 'ok');
+  } catch (e) {
+    toast('Error: ' + e.message, 'err');
+  }
+}
+
+async function lockAll() {
+  Object.keys(dayStates).forEach(d => dayStates[d] = false);
+  try {
+    await db.collection('configuracion').doc('candados_fosiles').set(dayStates);
+    renderCards();
+    toast('Todos los días bloqueados.', 'ok');
+  } catch (e) {
+    toast('Error: ' + e.message, 'err');
+  }
+}
+
+function renderCards() {
+  const ICONS = { lunes:'&#x1F9B4;', martes:'&#x26CF;&#xFE0F;', miercoles:'&#x1F50D;', jueves:'&#x1FAA8;', viernes:'&#x1F3C6;' };
+  Object.keys(dayStates).forEach(day => {
+    const open = dayStates[day];
+    const card = document.getElementById('lc-' + day);
+    const ico  = document.getElementById('ico-' + day);
+    const st   = document.getElementById('st-' + day);
+    const btn  = document.getElementById('btn-' + day);
+    if (!card) return;
+    card.className = 'lock-card ' + (open ? 'is-open' : 'is-locked');
+    ico.innerHTML  = open ? '&#x1F513;' : '&#x1F512;';
+    st.textContent = open ? 'Desbloqueado' : 'Bloqueado';
+    st.style.color = open ? '#0f9d58' : '#9aa0a6';
+    btn.className  = 'lc-btn ' + (open ? 'lc-close' : 'lc-open');
+    btn.textContent = open ? 'Bloquear' : 'Desbloquear';
+    btn.disabled   = false;
+  });
+}
+
+// ── Puntuaciónes ──
+async function loadPuntuaciónes() {
+  const container = document.getElementById('puntuaciónesTables');
+  container.innerHTML = '<div class="loading">Cargando...</div>';
+  try {
+    const snap = await db.collection('tareas_fosiles').orderBy('timestamp', 'desc').get();
+    const days = ['Lunes','Martes','Miércoles','Jueves','Viernes'];
+    const colors = { lunes:'#1a73e8', martes:'#0f9d58', miercoles:'#e6a817', jueves:'#e8711a', viernes:'#9334e6' };
+    const byDay = {};
+    days.forEach(d => byDay[d] = []);
+    snap.forEach(doc => {
+      const data = doc.data();
+      const día = data.día || '';
+      if (byDay[día]) byDay[día].push({ id: doc.id, ...data });
+    });
+    let html = '';
+    days.forEach(day => {
+      const docs = byDay[day];
+      const key = day.toLowerCase().replace('e\u0301','e').replace('e\u0301','e');
+      const color = colors[key] || '#607D8B';
+      html += '<div class="pts-day-block"><div class="pts-day-title" style="background:' + color + '">' + day + ' (' + docs.length + ' entregas)</div>';
+      if (!docs.length) {
+        html += '<div style="padding:14px;background:white;border:1px solid #e8eaed;border-top:none;border-radius:0 0 12px 12px;color:#9aa0a6;font-size:.85rem">Sin entregas aún.</div>';
+      } else {
+        html += '<table class="pts-table"><thead><tr><th style="background:' + color + '">Estudíante</th><th style="background:' + color + '">Auto</th><th style="background:' + color + '">Abierta</th><th style="background:' + color + '">Total</th><th style="background:' + color + '">Fecha</th></tr></thead><tbody>';
+        docs.sort((a,b) => (a.nombre||'').localeCompare(b.nombre||'')).forEach(d => {
+          const auto  = parseInt(d.puntuaciónAutomática) || 0;
+          const open  = parseInt(d.notaAbierta) || 0;
+          const total = auto + open;
+          html += '<tr><td>' + (d.nombre || '—') + '</td><td>' + auto + '/' + (d.puntuaciónMaximaAuto||16) + '</td><td>' + (d.notaAbierta !== undefined ? d.notaAbierta : '—') + '</td><td style="font-weight:900;color:' + color + '">' + total + '</td><td style="font-size:.75rem;color:#9aa0a6">' + (d.fechaEntrega||'').substring(0,16) + '</td></tr>';
+        });
+        html += '</tbody></table>';
+      }
+      html += '</div>';
+    });
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = '<div class="loading" style="color:#d93025">Error: ' + e.message + '</div>';
+  }
+}
+
+async function borrarCeros() {
+  if (!confirm('Borrar todas las entregas con puntuación automática de 0? Esta acción no se puede deshacer.')) return;
+  try {
+    const snap = await db.collection('tareas_fosiles').where('puntuaciónAutomática','==','0').get();
+    const batch = db.batch();
+    snap.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
+    toast('Entregas con 0 pts eliminadas.', 'ok');
+    loadPuntuaciónes();
+  } catch(e) {
+    toast('Error: ' + e.message, 'err');
+  }
+}
+
+async function borrarPorDia() {
+  const día = prompt('Escribe el día a borrar (Lunes, Martes, Miércoles, Jueves o Viernes):');
+  if (!día) return;
+  const días = ['Lunes','Martes','Miércoles','Jueves','Viernes'];
+  if (!días.includes(día)) { alert('Día inválido. Escribe exactamente: Lunes, Martes, Miércoles, Jueves o Viernes.'); return; }
+  if (!confirm('Borrar TODAS las entregas del ' + día + '? Esta acción no se puede deshacer.')) return;
+  try {
+    const snap = await db.collection('tareas_fosiles').where('día','==',día).get();
+    const batch = db.batch();
+    snap.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
+    toast('Entregas del ' + día + ' eliminadas.', 'ok');
+    loadPuntuaciónes();
+  } catch(e) {
+    toast('Error: ' + e.message, 'err');
+  }
+}
+
+// ── Registro ──
+let allDocs = [];
+const DAY_COLORS = { lunes:'#1a73e8', martes:'#0f9d58', miercoles:'#e6a817', jueves:'#e8711a', viernes:'#9334e6' };
+const DAY_ICONS  = { lunes:'&#x1F9B4;', martes:'&#x26CF;&#xFE0F;', miercoles:'&#x1F50D;', jueves:'&#x1FAA8;', viernes:'&#x1F3C6;' };
+const MAX_OPEN   = { lunes:4, martes:4, miercoles:4, jueves:4, viernes:4 };
+
+async function loadRegistro() {
+  document.getElementById('studentList').innerHTML = '<div class="loading">Cargando entregas...</div>';
+  document.getElementById('studentDetail').style.display = 'none';
+  try {
+    const snap = await db.collection('tareas_fosiles').orderBy('timestamp','desc').get();
+    allDocs = [];
+    snap.forEach(d => allDocs.push({ id: d.id, ...d.data() }));
+    renderList();
+  } catch (e) {
+    document.getElementById('studentList').innerHTML = '<div class="loading" style="color:#d93025">Error: ' + e.message + '</div>';
+  }
+}
+
+function renderList() {
+  const el = document.getElementById('studentList');
+  if (!allDocs.length) { el.innerHTML = '<div class="loading">Sin entregas aún.</div>'; return; }
+  const byStudent = {};
+  allDocs.forEach(d => {
+    const n = d.nombre || 'Sin nombre';
+    if (!byStudent[n]) byStudent[n] = [];
+    byStudent[n].push(d);
+  });
+  const sorted = Object.entries(byStudent).sort((a, b) => a[0].localeCompare(b[0]));
+  let html = '<div class="list-count">' + sorted.length + ' estudíante' + (sorted.length !== 1 ? 's' : '') + ' con entregas</div>';
+  sorted.forEach(([name, tasks]) => {
+    const chips = tasks.map(t => {
+      const k = (t.día || '').toLowerCase().replace('\xe9','e');
+      const c = DAY_COLORS[k] || '#9aa0a6';
+      return '<span class="day-chip" style="background:' + c + '22;color:' + c + ';border:1px solid ' + c + '">' + t.día + '</span>';
+    }).join('');
+    html += '<div class="st-row" onclick="showDetail(\'' + encodeURIComponent(name) + '\')">'
+      + '<div class="st-avatar">' + name.charAt(0).toUpperCase() + '</div>'
+      + '<div><div class="st-name">' + name + '</div><div class="st-chips">' + chips + '</div></div>'
+      + '<div class="st-arrow">&rarr;</div></div>';
+  });
+  el.innerHTML = html;
+}
+
+function showDetail(enc) {
+  const name = decodeURIComponent(enc);
+  const order = ['Lunes','Martes','Miércoles','Jueves','Viernes'];
+  const tasks = allDocs.filter(d => (d.nombre || 'Sin nombre') === name)
+    .sort((a, b) => order.indexOf(a.día) - order.indexOf(b.día));
+  document.getElementById('detailName').textContent = name;
+  let html = '';
+  tasks.forEach(t => {
+    const k     = (t.día || '').toLowerCase().replace('\xe9','e');
+    const color = DAY_COLORS[k] || '#9aa0a6';
+    const maxO  = MAX_OPEN[k] || 0;
+    const auto  = parseInt(t.puntuaciónAutomática) || 0;
+    const open  = parseInt(t.notaAbierta) || 0;
+    const total = auto + open;
+    html += '<div class="task-card">'
+      + '<div class="task-hdr" style="background:' + color + '"><span>' + t.día + '</span><span style="font-size:.8rem;opacity:.85">' + (t.fechaEntrega || '') + '</span></div>'
+      + '<div class="task-body">'
+      + '<div class="task-row"><span class="task-lbl">Puntuación automática</span>'
+      + '<span class="score-pill" style="background:' + color + '22;color:' + color + '">' + auto + ' / ' + (t.puntuaciónMaximaAuto || 16) + ' pts</span></div>';
+    if (t.respuestaAbierta) {
+      html += '<div class="task-row col"><span class="task-lbl">Respuesta abierta</span><div class="open-box">' + t.respuestaAbierta + '</div></div>';
+    } else {
+      html += '<div class="task-row"><span class="task-lbl" style="color:#9aa0a6;font-style:italic">Sin respuesta abierta.</span></div>';
+    }
+    if (maxO > 0) {
+      html += '<div class="task-row grade-row"><span class="task-lbl">Nota pregunta abierta (max. ' + maxO + ' pts)</span>'
+        + '<div class="grade-ctrl"><input class="grade-inp" type="number" min="0" max="' + maxO + '" value="' + (t.notaAbierta || '') + '" placeholder="0" id="gi-' + t.id + '">'
+        + '<button class="save-btn" onclick="saveGrade(\'' + t.id + '\',' + maxO + ')">Guardar</button>'
+        + '<span class="saved-ok" id="so-' + t.id + '">Guardado</span></div></div>';
+    }
+    html += '<div class="task-total"><span class="task-lbl">Total</span><span class="total-pts" style="color:' + color + '" id="tot-' + t.id + '">' + total + ' pts</span></div>'
+      + '</div></div>';
+  });
+  document.getElementById('detailCards').innerHTML = html;
+  document.getElementById('studentDetail').style.display = 'block';
+  document.getElementById('studentDetail').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function backToList() {
+  document.getElementById('studentDetail').style.display = 'none';
+  document.getElementById('studentList').scrollIntoView({ behavior: 'smooth' });
+}
+
+async function saveGrade(docId, maxO) {
+  const inp = document.getElementById('gi-' + docId);
+  const val = parseInt(inp.value);
+  if (isNaN(val) || val < 0 || val > maxO) { alert('Ingresa un número entre 0 y ' + maxO); return; }
+  try {
+    await db.collection('tareas_fosiles').doc(docId).update({ notaAbierta: val });
+    const badge = document.getElementById('so-' + docId);
+    if (badge) { badge.style.display = 'inline'; setTimeout(() => badge.style.display = 'none', 3000); }
+    const entry = allDocs.find(d => d.id === docId);
+    if (entry) {
+      entry.notaAbierta = val;
+      const totEl = document.getElementById('tot-' + docId);
+      if (totEl) totEl.textContent = ((parseInt(entry.puntuaciónAutomática) || 0) + val) + ' pts';
+    }
+  } catch (e) {
+    alert('Error guardando: ' + e.message);
+  }
+}
+
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + (type || 'info');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => el.className = 'toast', 4000);
+}
+</script>
+</body>
+</html>
