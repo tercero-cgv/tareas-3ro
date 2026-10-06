@@ -94,6 +94,12 @@ if(DEMO){
   };
 }
 const $=s=>document.querySelector(s);
+/* Confirmación con doble toque (sin ventanas emergentes, que algunos navegadores bloquean) */
+function twoTap(btn,fn){if(!btn)return;const orig=btn.innerHTML;btn.onclick=async()=>{
+  if(!btn._armed){btn._armed=true;btn.innerHTML="⚠️ ¿Seguro? Toque otra vez";btn._t=setTimeout(()=>{btn._armed=false;btn.innerHTML=orig;},4000);return;}
+  clearTimeout(btn._t);btn.disabled=true;btn.innerHTML="Borrando…";
+  try{await fn();}catch(e){console.error(e);btn.disabled=false;btn._armed=false;btn.innerHTML=orig;alertBox("No se pudo: "+(e.message||e));}};}
+function alertBox(t){let b=document.getElementById("ab");if(!b){b=document.createElement("div");b.id="ab";b.style.cssText="position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#1f2937;color:#fff;padding:10px 16px;border-radius:10px;z-index:30;pointer-events:none";document.body.appendChild(b);}b.textContent=t;b.style.display="block";clearTimeout(b._t);b._t=setTimeout(()=>b.style.display="none",3500);}
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const r1=n=>Math.round(n*10)/10;
 const DAYT={1:"Mi primera investigación",2:"Especialistas en Sólidos",3:"Especialistas en Líquidos",4:"Especialistas en Gases",5:"Prueba de certificación"};
@@ -144,9 +150,9 @@ function vRevisar(M){
   M.innerHTML=`<div class="card small">Solo aparecen las partes que la app no puede corregir sola (escritos, dibujos y ejemplos que no reconoce). El número sugerido es la nota provisional de la app: confírmelo o cámbielo.<br><button class="btn green" id="allOk" style="margin-top:8px">✔ Confirmar TODAS las notas sugeridas (${items.length})</button></div>`+
   items.map(({d,id,r})=>`<div class="rv"><div class="meta">Día ${d.dia} · ${esc(r.titulo)} · <b>${esc(d.nombre)}</b> · ${r.estado==="pendiente"?"⏳ ejemplo no reconocido":"✍️ escrito/dibujo"}</div>${ansHTML(r)}
    <div class="row">Puntos: <input class="pt" type="number" step="0.5" min="0" max="${r.max}" value="${r.pts}" data-doc="${d.id}" data-sec="${id}"> / ${r.max} <button class="btn green" data-ok="${d.id}|${id}">Confirmar</button></div></div>`).join("");
-  $("#allOk").onclick=async()=>{if(!confirm("¿Confirmar las "+items.length+" notas tal como aparecen en las cajitas?"))return;
+  twoTap($("#allOk"),async()=>{
     for(const {d,id} of items){const inp=M.querySelector(`input[data-doc="${d.id}"][data-sec="${id}"]`);let v=parseFloat(inp.value);if(isNaN(v))continue;v=Math.max(0,Math.min(+inp.max,v));await DB.merge(d.id,{secciones:{[id]:{ajuste:v}}});d.secciones[id].ajuste=v;}
-    render();};
+    render();});
   M.querySelectorAll("[data-ok]").forEach(b=>b.onclick=async()=>{const[doc,sec]=b.dataset.ok.split("|");const inp=M.querySelector(`input[data-doc="${doc}"][data-sec="${sec}"]`);let v=parseFloat(inp.value);const mx=+inp.max;if(isNaN(v)||v<0||v>mx)return alert("Puntos entre 0 y "+mx);
     b.disabled=true;await DB.merge(doc,{secciones:{[sec]:{ajuste:v}}});const dd=DOCS.find(x=>x.id===doc);if(dd)dd.secciones[sec].ajuste=v;render();});
 }
@@ -179,13 +185,16 @@ function detail(sl,day){
         h+=`<div class="card" style="border:1px solid var(--line)"><b>${esc(r.titulo)}</b> <span class="small">${r.final?"":"(borrador: aún mejorando)"} · intentos: ${r.intentos||1}</span>${ansHTML(r)}
         <div class="secline"><span>App: <b>${r.pts}</b> / ${r.max}${r.ajuste!=null?` · Maestro: <b>${r.ajuste}</b>`:""}</span>
         <span class="row">Ajustar: <input class="pt" type="number" step="0.5" min="0" max="${r.max}" value="${val(r)}" data-sec="${id}"><button class="btn green" data-save="${id}">Guardar</button><button class="btn red" data-redo="${id}" title="Borra esta sección para que el estudiante la vuelva a hacer">Reponer</button></span></div></div>`;});
-      h+=`<button class="btn red" id="delDay">🗑 Borrar todo el Día ${day} de este estudiante</button>`;}
+      h+=`<button class="btn red" id="delDay">🗑 Borrar todo el Día ${day} de este estudiante</button> `;}
+    h+=`<div class="secline"><span class="small">Para quitar a un estudiante de prueba o que se fue del grupo:</span><button class="btn red" id="delStu">❌ Eliminar a ${esc(st.nombre)} por completo (todos los días y de la lista)</button></div>`;
     $("#modalIn").innerHTML=h;$("#modal").style.display="block";
     $("#cls").onclick=()=>{$("#modal").style.display="none";};
     document.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>{day=+b.dataset.day;draw();});
     document.querySelectorAll("[data-save]").forEach(b=>b.onclick=async()=>{const id=b.dataset.save;const v=parseFloat(document.querySelector(`input[data-sec="${id}"]`).value);const mx=d.secciones[id].max;if(isNaN(v)||v<0||v>mx)return alert("Puntos entre 0 y "+mx);await DB.merge(d.id,{secciones:{[id]:{ajuste:v}}});d.secciones[id].ajuste=v;draw();});
-    document.querySelectorAll("[data-redo]").forEach(b=>b.onclick=async()=>{if(!confirm("¿Borrar esta sección para que el estudiante la repita?"))return;await DB.delSection(d.id,b.dataset.redo);delete d.secciones[b.dataset.redo];draw();});
-    const dd=$("#delDay");if(dd)dd.onclick=async()=>{if(!confirm("¿Borrar TODO el Día "+day+" de "+st.nombre+"?"))return;await DB.delDoc(d.id);delete st.dias[day];draw();};
+    document.querySelectorAll("[data-redo]").forEach(b=>twoTap(b,async()=>{await DB.delSection(d.id,b.dataset.redo);delete d.secciones[b.dataset.redo];draw();alertBox("Sección borrada");}));
+    twoTap($("#delDay"),async()=>{await DB.delDoc(d.id);delete st.dias[day];DOCS=DOCS.filter(x=>x.id!==d.id);draw();alertBox("Día "+day+" borrado");});
+    twoTap($("#delStu"),async()=>{for(const n of [1,2,3,4,5])await DB.delDoc(st.slug+"_d"+n);DOCS=DOCS.filter(x=>x.slug!==st.slug);
+      CONF.roster=(CONF.roster||[]).filter(n=>slug(n)!==st.slug);await DB.saveCfg(CONF);$("#modal").style.display="none";render();alertBox(st.nombre+" eliminado por completo");});
   };draw();
 }
 function exportCSV(S){
