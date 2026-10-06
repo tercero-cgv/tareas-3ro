@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel del Maestro · Bitácora de Materia</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+:root{--f:'Univers Condensed','Univers LT Std','Roboto Condensed','Arial Narrow',sans-serif;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--ok:#15803d;--okbg:#dcfce7;--bad:#b91c1c;--badbg:#fee2e2;--rev:#a16207;--revbg:#fef3c7;--c:#334155}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--f);font-weight:300;color:var(--ink);background:#f3f4f6;font-size:17px}
+b,h1,h2,h3,th,.btn{font-weight:400}
+button,input,select,textarea{font-family:inherit;font-size:inherit}
+header{background:var(--c);color:#fff;padding:12px 18px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:5}
+header h1{margin:0;font-size:22px;flex:1}
+nav{display:flex;gap:6px;flex-wrap:wrap}
+nav button{background:#ffffff22;color:#fff;border:none;border-radius:8px;padding:8px 14px;cursor:pointer}
+nav button.on{background:#fff;color:var(--c)}
+main{max-width:1200px;margin:0 auto;padding:16px}
+.card{background:#fff;border-radius:12px;padding:16px;margin:12px 0;box-shadow:0 1px 3px #0001}
+.btn{border:none;background:var(--c);color:#fff;border-radius:8px;padding:8px 14px;cursor:pointer}
+.btn.red{background:var(--bad)}.btn.green{background:var(--ok)}.btn.gray{background:#9ca3af}
+table{border-collapse:collapse;width:100%;background:#fff}
+th,td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:center}
+th{background:#f9fafb;font-size:15px;color:var(--mut);position:sticky;top:0}
+td:first-child,th:first-child{text-align:left}
+td.cl{cursor:pointer}td.cl:hover{background:#f1f5f9}
+.tot{background:#f1f5f9}
+.flag{display:inline-block;background:var(--revbg);color:var(--rev);border-radius:999px;font-size:12px;padding:1px 7px;margin-left:4px}
+.locks{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.lock{border:2px solid var(--line);border-radius:12px;padding:12px;text-align:center;cursor:pointer}
+.lock.on{border-color:var(--ok);background:var(--okbg)}
+.lock big{font-size:30px;display:block}
+textarea{width:100%;min-height:200px;padding:10px;border:1px solid var(--line);border-radius:8px}
+.rv{border-left:6px solid var(--rev);background:#fff;border-radius:10px;padding:12px 14px;margin:10px 0;box-shadow:0 1px 3px #0001}
+.rv .meta{font-size:14px;color:var(--mut)}
+.ans{background:#f9fafb;border-radius:8px;padding:8px 10px;margin:6px 0}
+.ans .qq{font-size:14px;color:var(--mut)}
+.ans img{max-width:320px;border:1px solid var(--line);border-radius:8px;display:block;margin-top:4px}
+.ok{color:var(--ok)}.no{color:var(--bad)}
+input.pt{width:70px;padding:6px;border:2px solid var(--line);border-radius:8px;text-align:center}
+.modal{position:fixed;inset:0;background:#0006;display:none;z-index:10;overflow:auto;padding:30px 10px}
+.modal .in{background:#fff;max-width:900px;margin:0 auto;border-radius:14px;padding:18px}
+.login{max-width:380px;margin:80px auto;text-align:center}
+.login input{width:100%;padding:10px;border:2px solid var(--line);border-radius:8px;margin:10px 0}
+.demo{background:#fde68a;color:#78350f;text-align:center;font-size:14px;padding:4px}
+.small{font-size:14px;color:var(--mut)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.secline{display:flex;gap:10px;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:8px;margin-top:10px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<div id="demo" class="demo" style="display:none">MODO DE PRUEBA: lee los datos guardados en este navegador.</div>
+<div id="app"></div>
+<div class="modal" id="modal"><div class="in" id="modalIn"></div></div>
+<script>
+/* ===== Pegue aquí el MISMO firebaseConfig que en materia.html ===== */
+const firebaseConfig = {
+    apiKey: "AIzaSyB7AMIGXxRUCZxuGghRkkc8-iSSxpMOKsU",
+    authDomain: "tareas-organismos.firebaseapp.com",
+    projectId: "tareas-organismos",
+    storageBucket: "tareas-organismos.firebasestorage.app",
+    messagingSenderId: "16309300432",
+    appId: "1:16309300432:web:58a9c819470b871997c2d5"
+  };
+const PASSWORD="lozada2025";
+const COL="bitacora_materia",CFG=["configuracion","bitacora_materia"];
+
+const DEMO=firebaseConfig.apiKey.startsWith("PEGA");
+function deepMerge(a,b){for(const k in b){if(b[k]&&typeof b[k]==="object"&&!Array.isArray(b[k])&&a[k]&&typeof a[k]==="object")deepMerge(a[k],b[k]);else a[k]=b[k];}return a;}
+let DB;
+if(DEMO){
+  const ls={get:k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
+  const all=()=>Object.keys(localStorage).filter(k=>k.startsWith("demo_doc_")).map(k=>({id:k.slice(9),...ls.get(k)}));
+  DB={
+    getCfg:async()=>ls.get("demo_cfg")||{dias:{1:true,2:true,3:true,4:true,5:true},roster:["Estudiante de prueba"]},
+    saveCfg:async c=>ls.set("demo_cfg",c),
+    watchAll(cb){cb(all());window.addEventListener("storage",()=>cb(all()));setInterval(()=>cb(all()),4000);},
+    merge:async(id,d)=>{const k="demo_doc_"+id;ls.set(k,deepMerge(ls.get(k)||{},d));},
+    delSection:async(id,s)=>{const k="demo_doc_"+id;const d=ls.get(k);if(d){delete d.secciones[s];ls.set(k,d);}},
+    delDoc:async id=>localStorage.removeItem("demo_doc_"+id)
+  };
+}else{
+  firebase.initializeApp(firebaseConfig);const db=firebase.firestore();
+  DB={
+    getCfg:async()=>{const s=await db.collection(CFG[0]).doc(CFG[1]).get();return s.exists?s.data():{dias:{},roster:[]};},
+    saveCfg:async c=>db.collection(CFG[0]).doc(CFG[1]).set(c),
+    watchAll(cb){db.collection(COL).onSnapshot(q=>cb(q.docs.map(d=>({id:d.id,...d.data()}))));},
+    merge:async(id,d)=>db.collection(COL).doc(id).set(d,{merge:true}),
+    delSection:async(id,s)=>db.collection(COL).doc(id).update({["secciones."+s]:firebase.firestore.FieldValue.delete()}),
+    delDoc:async id=>db.collection(COL).doc(id).delete()
+  };
+}
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const r1=n=>Math.round(n*10)/10;
+const DAYT={1:"Mi primera investigación",2:"Especialistas en Sólidos",3:"Especialistas en Líquidos",4:"Especialistas en Gases",5:"Prueba de certificación"};
+const ORDER=["L1a","L1b","L1c","L1d","A1a","A1b","L2a","L2b","L2c","L2d","L2e","A2a","A2b","L3a","L3b","L3c","L3d","A3a","A3b","A3c","A3d","L4a","L4b","L4c","A4a","A4b","A4c","A4d","EA","EB","EC","ED","EM"];
+
+let DOCS=[],CONF={dias:{},roster:[]},VIEW="control";
+const val=r=>r.ajuste!=null?r.ajuste:r.pts;
+const needs=r=>r.final&&r.estado!=="ok"&&r.ajuste==null&&r.max>0;
+
+/* ---- agrupar por estudiante ---- */
+function students(){
+  const m={};
+  DOCS.forEach(d=>{const s=m[d.slug]=m[d.slug]||{slug:d.slug,nombre:d.nombre,dias:{}};s.dias[d.dia]=d;});
+  (CONF.roster||[]).forEach(n=>{const sl=slug(n);if(!m[sl])m[sl]={slug:sl,nombre:n,dias:{}};});
+  return Object.values(m).sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
+}
+const slug=s=>(" "+String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim()).trim().replace(/ /g,"-");
+function score(st,day,blk){const d=st.dias[day];if(!d||!d.secciones)return{v:null,p:0};let v=0,p=0,any=false;
+  for(const id in d.secciones){const r=d.secciones[id];if(r.blk===blk&&r.final){v+=val(r);any=true;if(needs(r))p++;}}return{v:any?r1(v):null,p};}
+
+/* ---- vistas ---- */
+function shell(){
+  $("#app").innerHTML=`<header><h1>🔬 Panel del Maestro · Bitácora de Materia</h1><nav>
+  ${[["control","Control de días"],["revisar","Por revisar"],["registro","Registro de notas"],["lista","Lista"]].map(([k,l])=>`<button data-v="${k}" class="${VIEW===k?"on":""}">${l}${k==="revisar"?` (<span id="nrev">0</span>)`:""}</button>`).join("")}</nav></header><main id="main"></main>`;
+  document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{VIEW=b.dataset.v;shell();});
+  render();
+}
+function render(){
+  const n=DOCS.reduce((a,d)=>a+Object.values(d.secciones||{}).filter(needs).length,0);
+  const nr=$("#nrev");if(nr)nr.textContent=n;
+  const M=$("#main");if(!M)return;
+  if(VIEW==="control")return vControl(M);
+  if(VIEW==="revisar")return vRevisar(M);
+  if(VIEW==="registro")return vRegistro(M);
+  if(VIEW==="lista")return vLista(M);
+}
+function vControl(M){
+  M.innerHTML=`<div class="card"><h2>Días disponibles para los estudiantes</h2><p class="small">Toque un día para abrirlo o cerrarlo. Los iPads se actualizan al instante.</p>
+  <div class="locks">${[1,2,3,4,5].map(d=>`<div class="lock ${CONF.dias?.[d]?"on":""}" data-d="${d}"><big>${CONF.dias?.[d]?"🔓":"🔒"}</big>Día ${d}<br><span class="small">${DAYT[d]}</span></div>`).join("")}</div></div>
+  <div class="card"><h2>Actividad en vivo</h2>${[1,2,3,4,5].map(d=>{const docs=DOCS.filter(x=>x.dia===d);return `<div>Día ${d}: <b>${docs.length}</b> estudiantes han empezado</div>`}).join("")}</div>`;
+  M.querySelectorAll(".lock").forEach(l=>l.onclick=async()=>{const d=l.dataset.d;CONF.dias=CONF.dias||{};CONF.dias[d]=!CONF.dias[d];await DB.saveCfg(CONF);render();});
+}
+function ansHTML(r){return (r.vista||[]).map(v=>`<div class="ans"><div class="qq">${esc(v.q)}</div>${v.img!==undefined?(v.img?`<img src="${v.img}">`:'<i class="no">sin dibujo</i>'):`<div class="${v.ok===true?"ok":v.ok===false?"no":""}">${esc(v.a)||"<i>—</i>"} ${v.ok===true?"✔":v.ok===false?"✘":v.ok===null?"⏳":""}</div>`}</div>`).join("");}
+function vRevisar(M){
+  const items=[];DOCS.forEach(d=>Object.entries(d.secciones||{}).forEach(([id,r])=>{if(needs(r))items.push({d,id,r});}));
+  items.sort((a,b)=>a.d.dia-b.d.dia||ORDER.indexOf(a.id)-ORDER.indexOf(b.id)||a.d.nombre.localeCompare(b.d.nombre));
+  if(!items.length){M.innerHTML=`<div class="card">✅ No hay nada pendiente de revisar.</div>`;return;}
+  M.innerHTML=`<div class="card small">Solo aparecen las partes que la app no puede corregir sola (escritos, dibujos y ejemplos que no reconoce). El número sugerido es la nota provisional de la app: confírmelo o cámbielo.<br><button class="btn green" id="allOk" style="margin-top:8px">✔ Confirmar TODAS las notas sugeridas (${items.length})</button></div>`+
+  items.map(({d,id,r})=>`<div class="rv"><div class="meta">Día ${d.dia} · ${esc(r.titulo)} · <b>${esc(d.nombre)}</b> · ${r.estado==="pendiente"?"⏳ ejemplo no reconocido":"✍️ escrito/dibujo"}</div>${ansHTML(r)}
+   <div class="row">Puntos: <input class="pt" type="number" step="0.5" min="0" max="${r.max}" value="${r.pts}" data-doc="${d.id}" data-sec="${id}"> / ${r.max} <button class="btn green" data-ok="${d.id}|${id}">Confirmar</button></div></div>`).join("");
+  $("#allOk").onclick=async()=>{if(!confirm("¿Confirmar las "+items.length+" notas tal como aparecen en las cajitas?"))return;
+    for(const {d,id} of items){const inp=M.querySelector(`input[data-doc="${d.id}"][data-sec="${id}"]`);let v=parseFloat(inp.value);if(isNaN(v))continue;v=Math.max(0,Math.min(+inp.max,v));await DB.merge(d.id,{secciones:{[id]:{ajuste:v}}});d.secciones[id].ajuste=v;}
+    render();};
+  M.querySelectorAll("[data-ok]").forEach(b=>b.onclick=async()=>{const[doc,sec]=b.dataset.ok.split("|");const inp=M.querySelector(`input[data-doc="${doc}"][data-sec="${sec}"]`);let v=parseFloat(inp.value);const mx=+inp.max;if(isNaN(v)||v<0||v>mx)return alert("Puntos entre 0 y "+mx);
+    b.disabled=true;await DB.merge(doc,{secciones:{[sec]:{ajuste:v}}});const dd=DOCS.find(x=>x.id===doc);if(dd)dd.secciones[sec].ajuste=v;render();});
+}
+function vRegistro(M){
+  const S=students();
+  let h=`<div class="card row"><button class="btn" id="csv">⬇ Exportar CSV</button><button class="btn" id="printAll">🖨 Imprimir hojas de evaluación (todos)</button><span class="small">Toque una celda para ver el trabajo. ⏳ = partes por revisar.</span></div>
+  <div class="card" style="overflow-x:auto"><table><tr><th>Estudiante</th>${[1,2,3,4].map(d=>`<th>Lab ${d}<br>/16</th>`).join("")}<th class="tot">Labs<br>/64</th>${[1,2,3,4].map(d=>`<th>Act ${d}<br>/16</th>`).join("")}<th class="tot">Act.<br>/64</th><th class="tot">Prueba<br>/30</th></tr>`;
+  S.forEach(st=>{let tl=0,ta=0;h+=`<tr><td class="cl" data-s="${st.slug}" data-d="1">${esc(st.nombre)}</td>`;
+    [1,2,3,4].forEach(d=>{const s=score(st,d,"lab");tl+=s.v||0;h+=`<td class="cl" data-s="${st.slug}" data-d="${d}">${s.v??"—"}${s.p?`<span class="flag">⏳${s.p}</span>`:""}</td>`;});
+    h+=`<td class="tot">${r1(tl)}</td>`;
+    [1,2,3,4].forEach(d=>{const s=score(st,d,"act");ta+=s.v||0;h+=`<td class="cl" data-s="${st.slug}" data-d="${d}">${s.v??"—"}${s.p?`<span class="flag">⏳${s.p}</span>`:""}</td>`;});
+    const e=score(st,5,"exam");h+=`<td class="tot">${r1(ta)}</td><td class="cl tot" data-s="${st.slug}" data-d="5">${e.v??"—"}${e.p?`<span class="flag">⏳${e.p}</span>`:""}</td></tr>`;});
+  M.innerHTML=h+"</table></div>";
+  M.querySelectorAll("td.cl").forEach(td=>td.onclick=()=>detail(td.dataset.s,+td.dataset.d));
+  $("#csv").onclick=()=>exportCSV(S);$("#printAll").onclick=()=>printSheets(S);
+}
+function vLista(M){
+  M.innerHTML=`<div class="card"><h2>Lista de estudiantes</h2><p class="small">Un nombre por línea, tal como quiere que aparezca. Los estudiantes lo escogen de un menú (así no hay nombres mal escritos).</p>
+  <textarea id="ros">${esc((CONF.roster||[]).join("\n"))}</textarea><br><button class="btn" id="saveR">Guardar lista</button></div>`;
+  $("#saveR").onclick=async()=>{CONF.roster=$("#ros").value.split("\n").map(x=>x.trim()).filter(Boolean);await DB.saveCfg(CONF);alert("Lista guardada ("+CONF.roster.length+" estudiantes)");};
+}
+function detail(sl,day){
+  const st=students().find(s=>s.slug===sl);
+  const draw=()=>{const d=st.dias[day];
+    let h=`<div class="row" style="justify-content:space-between"><h2 style="margin:0">${esc(st.nombre)}</h2><button class="btn gray" id="cls">✕ Cerrar</button></div>
+    <div class="row" style="margin:10px 0">${[1,2,3,4,5].map(n=>`<button class="btn ${n===day?"":"gray"}" data-day="${n}">Día ${n}</button>`).join("")}</div>`;
+    if(!d||!d.secciones){h+="<p>Este estudiante no ha trabajado este día.</p>";}
+    else{const ids=Object.keys(d.secciones).sort((a,b)=>ORDER.indexOf(a)-ORDER.indexOf(b));
+      ids.forEach(id=>{const r=d.secciones[id];
+        h+=`<div class="card" style="border:1px solid var(--line)"><b>${esc(r.titulo)}</b> <span class="small">${r.final?"":"(borrador: aún mejorando)"} · intentos: ${r.intentos||1}</span>${ansHTML(r)}
+        <div class="secline"><span>App: <b>${r.pts}</b> / ${r.max}${r.ajuste!=null?` · Maestro: <b>${r.ajuste}</b>`:""}</span>
+        <span class="row">Ajustar: <input class="pt" type="number" step="0.5" min="0" max="${r.max}" value="${val(r)}" data-sec="${id}"><button class="btn green" data-save="${id}">Guardar</button><button class="btn red" data-redo="${id}" title="Borra esta sección para que el estudiante la vuelva a hacer">Reponer</button></span></div></div>`;});
+      h+=`<button class="btn red" id="delDay">🗑 Borrar todo el Día ${day} de este estudiante</button>`;}
+    $("#modalIn").innerHTML=h;$("#modal").style.display="block";
+    $("#cls").onclick=()=>{$("#modal").style.display="none";};
+    document.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>{day=+b.dataset.day;draw();});
+    document.querySelectorAll("[data-save]").forEach(b=>b.onclick=async()=>{const id=b.dataset.save;const v=parseFloat(document.querySelector(`input[data-sec="${id}"]`).value);const mx=d.secciones[id].max;if(isNaN(v)||v<0||v>mx)return alert("Puntos entre 0 y "+mx);await DB.merge(d.id,{secciones:{[id]:{ajuste:v}}});d.secciones[id].ajuste=v;draw();});
+    document.querySelectorAll("[data-redo]").forEach(b=>b.onclick=async()=>{if(!confirm("¿Borrar esta sección para que el estudiante la repita?"))return;await DB.delSection(d.id,b.dataset.redo);delete d.secciones[b.dataset.redo];draw();});
+    const dd=$("#delDay");if(dd)dd.onclick=async()=>{if(!confirm("¿Borrar TODO el Día "+day+" de "+st.nombre+"?"))return;await DB.delDoc(d.id);delete st.dias[day];draw();};
+  };draw();
+}
+function exportCSV(S){
+  const rows=[["Estudiante","Lab1","Lab2","Lab3","Lab4","Total Labs (64)","Act1","Act2","Act3","Act4","Total Act (64)","Prueba (30)","Por revisar"]];
+  S.forEach(st=>{let tl=0,ta=0,p=0;const L=[1,2,3,4].map(d=>{const s=score(st,d,"lab");tl+=s.v||0;p+=s.p;return s.v??"";});const A=[1,2,3,4].map(d=>{const s=score(st,d,"act");ta+=s.v||0;p+=s.p;return s.v??"";});const e=score(st,5,"exam");p+=e.p;
+    rows.push([st.nombre,...L,r1(tl),...A,r1(ta),e.v??"",p]);});
+  const csv="﻿"+rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="bitacora_materia_notas.csv";a.click();
+}
+function printSheets(S){
+  const tb=(title,rows,max)=>`<h3>${title}</h3><table><tr><th>Actividades</th><th>Puntuación</th><th>Obtenido</th><th>Observaciones</th></tr>${rows.map(([l,v,m])=>`<tr><td>${l}</td><td>${m}</td><td>${v??""}</td><td></td></tr>`).join("")}<tr><td style="text-align:right">Total</td><td style="background:#ddd">${max}</td><td>${r1(rows.reduce((a,r)=>a+(r[1]||0),0))}</td><td></td></tr></table>`;
+  const pages=S.map(st=>{const L=[1,2,3,4].map(d=>[`Día ${d}: ${DAYT[d]}`,score(st,d,"lab").v,16]);const A=[1,2,3,4].map(d=>[`Actividad #${d}`,score(st,d,"act").v,16]);const E=[["Día 5: Prueba de certificación",score(st,5,"exam").v,30]];
+    return `<div class="pg"><p><b>Nombre:</b> ${esc(st.nombre)}<br><b>Fecha:</b> ____________________</p>${tb("EVALUACIÓN FINAL – Laboratorios",L,64)}${tb("EVALUACIÓN FINAL – Prueba corta",E,30)}${tb("EVALUACIÓN FINAL – Actividades de Aplicación",A,64)}<p style="text-align:right;font-size:12px">(Para uso del maestro)</p></div>`;}).join("");
+  const w=window.open("","_blank");
+  w.document.write(`<html><head><title>Evaluación final</title><link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400&display=swap" rel="stylesheet"><style>body{font-family:'Univers Condensed','Roboto Condensed',sans-serif;font-weight:300}h3{text-align:center;font-weight:400;margin:18px 0 6px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #000;padding:6px;font-weight:300}th{background:#eee}.pg{page-break-after:always;padding:20px}</style></head><body>${pages}<script>setTimeout(()=>print(),600)<\/script></body></html>`);w.document.close();
+}
+
+/* ---- inicio ---- */
+function login(){
+  $("#app").innerHTML=`<div class="card login"><h2>🔬 Panel del Maestro</h2><input type="password" id="pw" placeholder="Contraseña"><button class="btn" id="go" style="width:100%">Entrar</button></div>`;
+  const go=async()=>{if($("#pw").value!==PASSWORD)return alert("Contraseña incorrecta");sessionStorage.setItem("bm_t","1");start();};
+  $("#go").onclick=go;$("#pw").onkeydown=e=>{if(e.key==="Enter")go();};
+}
+async function start(){
+  CONF=await DB.getCfg();shell();
+  DB.watchAll(docs=>{DOCS=docs.filter(d=>d.slug);if(!$("#modal").style.display||$("#modal").style.display==="none")render();else{const n=$("#nrev");if(n)n.textContent=DOCS.reduce((a,d)=>a+Object.values(d.secciones||{}).filter(needs).length,0);}});
+}
+if(DEMO)$("#demo").style.display="block";
+let ok=false;try{ok=sessionStorage.getItem("bm_t")==="1"}catch(e){}
+ok?start():login();
+</script>
+</body>
+</html>

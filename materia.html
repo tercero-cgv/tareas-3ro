@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bitácora del Especialista en Materia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --f:'Univers Condensed','Univers LT Std','UniversCondensed','Roboto Condensed','Arial Narrow',sans-serif;
+  --w:300; /* Light. Cambie a 400 si necesita letra más gruesa en los iPads */
+  --ink:#1f2937;--mut:#6b7280;--line:#e5e7eb;--bg:#f6f4ee;--card:#fff;
+  --ok:#15803d;--okbg:#dcfce7;--bad:#b91c1c;--badbg:#fee2e2;--rev:#a16207;--revbg:#fef3c7;
+  --c:#f59e0b;--c2:#fff7e6;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--f);font-weight:var(--w);color:var(--ink);background:var(--bg);font-size:20px;line-height:1.35}
+b,strong,h1,h2,h3,.btn,.tab{font-weight:400}
+button,input,select,textarea{font-family:inherit;font-size:inherit;font-weight:var(--w);color:inherit}
+.wrap{max-width:900px;margin:0 auto;padding:0 14px 80px}
+header.top{background:var(--c);color:#fff;padding:14px 16px;position:sticky;top:0;z-index:5;box-shadow:0 2px 6px #0002}
+header.top .row{max-width:900px;margin:0 auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+header.top h1{font-size:24px;margin:0;flex:1;letter-spacing:.3px}
+header.top .who{font-size:17px;opacity:.95}
+header.top a{color:#fff;font-size:15px;text-decoration:underline;cursor:pointer}
+.tabs{display:flex;gap:8px;margin:16px 0;flex-wrap:wrap}
+.tab{flex:1;min-width:120px;border:3px solid transparent;background:#fff;border-radius:14px;padding:10px 8px;text-align:center;cursor:pointer;box-shadow:0 1px 3px #0001}
+.tab small{display:block;font-size:14px;color:var(--mut)}
+.tab.on{border-color:var(--ink)}
+.tab.lock{opacity:.5}
+.banner{background:var(--c2);border-left:8px solid var(--c);border-radius:12px;padding:12px 16px;margin:10px 0 6px}
+.banner h2{margin:0;font-size:26px}
+.score{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+.pill{background:#fff;border-radius:999px;padding:6px 14px;font-size:17px;border:1px solid var(--line)}
+.pill b{font-weight:700}
+h3.blk{font-size:22px;margin:26px 0 8px;border-bottom:3px solid var(--c);padding-bottom:4px}
+.sec{background:var(--card);border-radius:16px;padding:16px 18px;margin:14px 0;box-shadow:0 1px 4px #0001;border:2px solid transparent}
+.sec.done{border-color:var(--okbg)}
+.sec h4{margin:0 0 6px;font-size:21px;font-weight:400;display:flex;gap:8px;align-items:baseline}
+.sec h4 .pts{margin-left:auto;font-size:15px;color:var(--mut);white-space:nowrap}
+.part{margin:14px 0}
+.q{margin:6px 0 8px}
+.story{background:#f3f4f6;border-radius:10px;padding:10px 12px;margin:6px 0;font-size:18px}
+.lbl{display:block;margin:8px 0 4px}
+input[type=text],textarea,select{width:100%;padding:10px 12px;border:2px solid var(--line);border-radius:10px;background:#fff}
+input[type=text]:focus,textarea:focus{outline:none;border-color:var(--c)}
+textarea{min-height:90px;resize:vertical}
+table.yn{width:100%;border-collapse:collapse}
+table.yn td,table.yn th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+table.yn th{font-size:16px;color:var(--mut);font-weight:400}
+.opts{display:flex;gap:6px;flex-wrap:wrap}
+.o{border:2px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;cursor:pointer;min-width:58px;text-align:center;user-select:none}
+.o.sel{background:var(--c);border-color:var(--c);color:#fff}
+.o.right{background:var(--okbg);border-color:var(--ok);color:var(--ok)}
+.o.wrong{background:var(--badbg);border-color:var(--bad);color:var(--bad)}
+.o.key{border-color:var(--ok);border-style:dashed}
+.mc .o{display:block;text-align:left;margin:6px 0;width:100%}
+tr.ok td:first-child::after{content:" ✔";color:var(--ok)}
+tr.no td:first-child::after{content:" ✘";color:var(--bad)}
+.msg{font-size:16px;margin-top:4px;padding:6px 10px;border-radius:8px}
+.msg.ok{background:var(--okbg);color:var(--ok)}
+.msg.no{background:var(--badbg);color:var(--bad)}
+.msg.rev{background:var(--revbg);color:var(--rev)}
+.bank{display:flex;flex-wrap:wrap;gap:8px;min-height:54px;padding:8px;border:2px dashed var(--line);border-radius:12px;margin-bottom:10px}
+.chip{background:#fff;border:2px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;user-select:none}
+.chip.sel{border-color:var(--c);background:var(--c2);box-shadow:0 0 0 3px var(--c)}
+.chip.right{border-color:var(--ok);background:var(--okbg)}
+.chip.wrong{border-color:var(--bad);background:var(--badbg)}
+.bins{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.bin{border:2px solid var(--line);border-radius:12px;padding:8px;min-height:120px;cursor:pointer;background:#fafafa}
+.bin h5{margin:0 0 6px;font-size:17px;font-weight:400}
+.bin .chip{display:inline-block;margin:3px}
+.rank{display:flex;flex-wrap:wrap;gap:8px}
+.rank .o{display:flex;align-items:center;gap:6px}
+.rank .n{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--line);font-size:16px}
+.rank .o.sel .n{background:#fff;color:var(--c)}
+.btn{display:inline-block;border:none;background:var(--ink);color:#fff;border-radius:12px;padding:12px 22px;cursor:pointer;font-size:20px;margin-top:10px}
+.btn.sm{font-size:15px;padding:6px 12px;background:#9ca3af}
+.btn.go{background:var(--c)}
+.btn:disabled{opacity:.4}
+.result{margin-top:12px;padding:10px 14px;border-radius:12px;font-size:18px}
+.pad{border:2px solid var(--line);border-radius:12px;background:#fff;touch-action:none;width:100%;display:block}
+.padbar{display:flex;gap:6px;margin:6px 0;flex-wrap:wrap;align-items:center}
+.dot{width:32px;height:32px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px var(--line);cursor:pointer}
+.dot.sel{box-shadow:0 0 0 3px var(--ink)}
+img.drawn{max-width:100%;border:2px solid var(--line);border-radius:12px}
+.locked{text-align:center;padding:50px 10px;color:var(--mut);font-size:22px}
+.login{max-width:520px;margin:40px auto;background:#fff;border-radius:18px;padding:24px;box-shadow:0 2px 10px #0002;text-align:center}
+.login h1{font-size:32px;margin:6px 0}
+.demo{background:#fde68a;color:#78350f;text-align:center;font-size:14px;padding:4px}
+.toast{pointer-events:none;position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:12px;font-size:17px;z-index:20;display:none}
+.d1{--c:#f59e0b;--c2:#fff7e6}.d2{--c:#2563eb;--c2:#eaf1ff}.d3{--c:#0d9488;--c2:#e6f7f5}.d4{--c:#7c3aed;--c2:#f1eaff}.d5{--c:#dc2626;--c2:#fdeaea}
+@media(max-width:560px){body{font-size:18px}.o{padding:7px 9px;min-width:48px}}
+</style>
+</head>
+<body class="d1">
+<div id="demo" class="demo" style="display:none">MODO DE PRUEBA: los datos se guardan solo en este navegador. Pegue la configuración de Firebase para usar en clase.</div>
+<div id="app"></div>
+<div id="toast" class="toast"></div>
+
+<script>
+/* =========================================================
+   1) CONFIGURACIÓN DE FIREBASE
+   Copie aquí el mismo bloque firebaseConfig que usa en index.html
+   (proyecto tareas-organismos). Mientras diga "PEGA_AQUI" la app
+   funciona en MODO DE PRUEBA (guarda solo en el navegador).
+   ========================================================= */
+const firebaseConfig = {
+    apiKey: "AIzaSyB7AMIGXxRUCZxuGghRkkc8-iSSxpMOKsU",
+    authDomain: "tareas-organismos.firebaseapp.com",
+    projectId: "tareas-organismos",
+    storageBucket: "tareas-organismos.firebasestorage.app",
+    messagingSenderId: "16309300432",
+    appId: "1:16309300432:web:58a9c819470b871997c2d5"
+  };
+const COL = "bitacora_materia";          // colección de respuestas
+const CFG = ["configuracion","bitacora_materia"]; // candados + lista
+
+/* ---------- Capa de datos (Firestore o modo de prueba) ---------- */
+const DEMO = firebaseConfig.apiKey.startsWith("PEGA");
+function deepMerge(a,b){for(const k in b){if(b[k]&&typeof b[k]==="object"&&!Array.isArray(b[k])&&a[k]&&typeof a[k]==="object")deepMerge(a[k],b[k]);else a[k]=b[k];}return a;}
+let DB;
+if(DEMO){
+  const ls={get:k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+  DB={
+    getCfg:async()=>ls.get("demo_cfg")||{dias:{1:true,2:true,3:true,4:true,5:true},roster:["Estudiante de prueba"]},
+    watchCfg(cb){const f=async()=>cb(await DB.getCfg());f();window.addEventListener("storage",e=>{if(e.key==="demo_cfg")f()});},
+    getDoc:async id=>ls.get("demo_doc_"+id),
+    merge:async(id,data)=>{const cur=ls.get("demo_doc_"+id)||{};ls.set("demo_doc_"+id,deepMerge(cur,data));}
+  };
+}else{
+  firebase.initializeApp(firebaseConfig);
+  const db=firebase.firestore();
+  DB={
+    getCfg:async()=>{const s=await db.collection(CFG[0]).doc(CFG[1]).get();return s.exists?s.data():{dias:{},roster:[]};},
+    watchCfg(cb){db.collection(CFG[0]).doc(CFG[1]).onSnapshot(s=>cb(s.exists?s.data():{dias:{},roster:[]}));},
+    getDoc:async id=>{const s=await db.collection(COL).doc(id).get();return s.exists?s.data():null;},
+    merge:async(id,data)=>db.collection(COL).doc(id).set(data,{merge:true})
+  };
+}
+
+/* =========================================================
+   2) UTILIDADES
+   ========================================================= */
+const norm=s=>(" "+String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim()+" ");
+const words=s=>String(s||"").trim().split(/\s+/).filter(w=>w.length>0).length;
+const slug=s=>norm(s).trim().replace(/ /g,"-");
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const $=(s,r=document)=>r.querySelector(s);
+function toast(t){const e=$("#toast");e.textContent=t;e.style.display="block";clearTimeout(e._t);e._t=setTimeout(()=>e.style.display="none",2600);}
+const r1=n=>Math.round(n*10)/10;
+
+/* Banco de palabras para revisar ejemplos de sólidos, líquidos y gases */
+const DICT={
+ s:["piedra","roca","lapiz","libro","mesa","silla","pupitre","escritorio","cuaderno","libreta","borra","borrador","goma de borrar","tijera","regla","pelota","bola","zapato","tenis","puerta","ventana","pizarra","computadora","ipad","tableta","telefono","celular","cuchara","tenedor","cuchillo","plato","vaso","taza","botella","caja","juguete","muneca","carro","carrito","bicicleta","llave","moneda","madera","bloque","metal","plastico","esponja","hielo","arena","lonchera","mochila","bulto","crayola","crayon","marcador","papel","carpeta","reloj","cama","sofa","mueble","televisor","television","tv","nevera","olla","sarten","toalla","ropa","camisa","pantalon","cepillo","peine","manzana","guineo","pan","galleta","ladrillo","arbol","hoja","flor","clavo","tornillo","martillo","sacapuntas","lampara","abanico","almohada","sabana","gorra","sombrero","espejo","cuadro","dado","lego","bloques","pelota de tenis","bandera","basurero","zafacon","escoba","banco","tablero","marco","anillo","collar","diente","hueso","fruta","naranja","uva","chocolate","dulce","caramelo","queso","huevo","piso","pared","techo","columpio","chorrera","tubo","cable","cartulina","sobre","vela","jabon"],
+ l:["agua","jugo","leche","aceite","miel","refresco","soda","vinagre","jabon liquido","champu","shampoo","sopa","cafe","te","gasolina","alcohol","sirope","salsa","ketchup","limonada","colorante","pintura","tinta","perfume","lluvia","mar","rio","oceano","lago","agua de la pluma","malta","batida","yogur liquido","enjuague","cloro","detergente","suavizante","gel","acondicionador","sangre","sudor","lagrimas","pega","pega liquida","caldo","crema","agua de coco","coquito","chocolate caliente","avena"],
+ g:["aire","viento","oxigeno","vapor","humo","helio","gas","aliento","dioxido de carbono","nitrogeno","aire acondicionado","brisa","burbuja","olor","perfume en el aire","gas de la estufa","respiracion","aire del abanico","aire de la bola","aire del globo"]
+};
+function catOf(text){
+  const t=norm(text);const found=new Set();
+  for(const c of ["s","l","g"]) for(const w of DICT[c]){ if(t.includes(" "+w+" ")||t.includes(" "+w+"s ")||t.includes(" "+w+"es ")) found.add(c); }
+  return found;
+}
+const CATN={s:"sólido",l:"líquido",g:"gas"};
+
+/* =========================================================
+   3) CONTENIDO DE LA BITÁCORA (aquí se editan preguntas y claves)
+   Cada sección: id, bloque (lab | act | exam | none), peso (puntos
+   que vale en la rúbrica), y partes. w = peso interno de cada parte.
+   ok = respuestas aceptadas (si se aceptan dos, el laboratorio puede
+   dar cualquiera de los dos resultados).
+   ========================================================= */
+const MATS=[["pelota","Pelota de tenis","🎾"],["roca","Roca","🪨"],["esponja","Esponja","🧽"],["madera","Bloque de madera","🪵"],["metal","Metal","🔩"],["plastico","Plástico","🥤"]];
+const LIQ=[["agua","Agua natural","💧"],["color","Agua con colorante","🧪"],["aceite","Aceite","🫒"],["miel","Miel","🍯"],["jugo","Jugo","🧃"]];
+const rows=(list,ok,msg={})=>list.map(([k,l,e])=>({k,label:l,emoji:e,ok:ok[k],msg:msg[k]}));
+const SI=["SÍ"],NO=["NO"],SN=["SÍ","NO"];
+
+const DAYS=[
+{n:1,title:"Iniciación de Especialistas",sub:"¿Qué es la materia?",sections:[
+ {id:"L1a",blk:"lab",peso:4,title:"🔍 Mi primera investigación",parts:[
+   {type:"inputs",w:0,labels:["Estación asignada"]},
+   {type:"inputs",w:4,head:"Materiales que investigué:",labels:["1.","2.","3.","4.","5."]}]},
+ {id:"L1b",blk:"lab",peso:4,title:"🔍 Observaciones con lupa",parts:[
+   {type:"inputs",w:1,labels:["Material más interesante"]},
+   {type:"open",w:3,q:"¿Qué observé con la lupa?",minWords:4,need:2,
+    kw:[["color"],["liso","aspero","suave","rugos","textura","duro","blando","brill"],["forma","redond","cuadrad","punt","grano","hilo","linea","hoyo","huec","raya"],["pequen","grande","tamano","chiquit"]],
+    hint:"Describe el material: ¿de qué color es? ¿Cómo es su textura (liso, áspero)? ¿Qué cosas pequeñas viste con la lupa?"}]},
+ {id:"L1c",blk:"lab",peso:4,title:"📊 Clasificación inicial",parts:[
+   {type:"classify",w:3,q:"Toca un material y luego toca el grupo donde va.",
+    bins:[["agarrar","✋ Materiales que puedo agarrar"],["fluyen","🌊 Materiales que fluyen"],["siento","💨 Materiales que siento, pero no veo"]],
+    items:[["piedra","Piedra","🪨","agarrar"],["lapiz","Lápiz","✏️","agarrar"],["madera","Bloque de madera","🪵","agarrar"],["cuchara","Cuchara","🥄","agarrar"],["agua","Agua","💧","fluyen"],["jugo","Jugo","🧃","fluyen"],["miel","Miel","🍯","fluyen"],["aceite","Aceite","🫒","fluyen"],["aire","Aire","💨","siento"],["viento","Viento","🌬️","siento"],["abanico","Aire del abanico","🌀","siento"]]},
+   {type:"draw",w:1,label:"Dibujo: dibuja un material de cada grupo."}]},
+ {id:"L1d",blk:"lab",peso:4,title:"💡 Descubrimiento del día",parts:[
+   {type:"open",w:4,q:"¿Qué aprendí hoy sobre la materia?",minWords:5,need:2,
+    kw:[["espacio"],["masa","peso","pesa"],["solid","liquid","gas"],["todo","rodea","hecho","hecha","material"]],
+    hint:"Piensa: ¿qué tienen en común la piedra, el agua y el aire? Todos ocupan…"}]},
+ {id:"A1a",blk:"act",peso:6,title:"Actividad de Aplicación #1 – Parte A",parts:[
+   {type:"mc",w:1,q:"1. Material que puedes agarrar con facilidad:",opts:["💧 Agua","🪨 Piedra","💨 Aire"],ok:[1],msg:"La piedra la puedes agarrar porque tiene su propia forma."},
+   {type:"mc",w:1,q:"2. Material que fluye cuando inclinas el recipiente:",opts:["🧃 Jugo","✏️ Lápiz","🌬️ Viento"],ok:[0],msg:"El jugo fluye: se mueve y se derrama cuando inclinas el vaso."},
+   {type:"mc",w:1,q:"3. Material que no puedes ver, pero sientes cuando te abanicas:",opts:["🍯 Miel","🪵 Madera","💨 Aire"],ok:[2],msg:"El aire no se ve, pero lo sientes en la cara cuando te abanicas."}]},
+ {id:"A1b",blk:"act",peso:10,title:"🏠 TAREA – Parte B: busca en tu casa",intro:"Escribe, dibuja y describe un ejemplo de cada tipo de material que encuentres en tu casa.",parts:[
+   {type:"example",w:2,cat:"s",label:"✋ Material que puedo agarrar:"},{type:"draw",w:1,label:"Dibujo"},{type:"open",w:1,q:"Descripción:",minWords:3,need:0,kw:[],hint:"Escribe cómo es: color, tamaño, si es duro o blando."},
+   {type:"example",w:2,cat:"l",label:"🌊 Material que fluye:"},{type:"draw",w:1,label:"Dibujo"},{type:"open",w:1,q:"Descripción:",minWords:3,need:0,kw:[],hint:"Escribe cómo es y cómo se mueve."},
+   {type:"example",w:2,cat:"g",label:"💨 Material que siento, pero no veo:"},{type:"draw",w:1,label:"Dibujo"},{type:"open",w:1,q:"Descripción:",minWords:3,need:0,kw:[],hint:"Escribe cómo sabes que está ahí."}]}
+]},
+{n:2,title:"Especialistas en Sólidos",sub:"Laboratorio de sólidos",sections:[
+ {id:"L2a",blk:"lab",peso:4,title:"🔨 Prueba de forma y dureza",parts:[
+   {type:"inputs",w:0,labels:["Equipo de investigación"]},
+   {type:"yn",w:3,q:"Prueba de forma: ¿Mantienen su forma?",opts:["SÍ","NO"],rows:rows(MATS,{pelota:SI,roca:SI,esponja:SI,madera:SI,metal:SI,plastico:SI},{esponja:"La esponja se aplasta, pero al soltarla vuelve a su forma. ¡Mantiene su forma!",pelota:"La pelota se aprieta un poco, pero vuelve a su forma redonda."})},
+   {type:"rank",w:3,q:"Prueba de dureza: toca los materiales en orden, del MÁS DURO (1) al MÁS BLANDO (6).",items:MATS,
+    rules:[{t:o=>["roca","metal"].includes(o[0]),m:"El #1 (el más duro) debe ser la roca o el metal."},
+           {t:o=>o[5]==="esponja",m:"La esponja es la más blanda: va en el #6."},
+           {t:o=>o.indexOf("pelota")>o.indexOf("roca")&&o.indexOf("pelota")>o.indexOf("metal"),m:"La pelota de tenis es más blanda que la roca y el metal."}]}]},
+ {id:"L2b",blk:"lab",peso:4,title:"💧🧲 Flotabilidad y prueba magnética",parts:[
+   {type:"yn",w:3,q:"Prueba de flotabilidad: ¿Flotan en agua?",opts:["Flota","Se hunde"],rows:rows(MATS,{pelota:["Flota"],roca:["Se hunde"],esponja:["Flota","Se hunde"],madera:["Flota"],metal:["Se hunde"],plastico:["Flota","Se hunde"]},{pelota:"La pelota de tenis tiene aire adentro y flota.",roca:"La roca se hunde.",madera:"La madera flota.",metal:"Un pedazo de metal se hunde."})},
+   {type:"yn",w:3,q:"Prueba magnética: ¿Lo atrae el imán?",opts:["SÍ","NO"],rows:rows(MATS,{pelota:NO,roca:NO,esponja:NO,madera:NO,metal:SN,plastico:NO},{metal:"Solo algunos metales (como el hierro) son atraídos por el imán.",plastico:"El imán no atrae el plástico.",madera:"El imán no atrae la madera."})}]},
+ {id:"L2c",blk:"lab",peso:4,title:"📈 Mi clasificación de especialista",parts:[{type:"criterio",w:4}]},
+ {id:"L2d",blk:"lab",peso:2,title:"Conclusión del especialista (1)",parts:[
+   {type:"mc",w:1,q:"¿Todos los sólidos mantienen su forma?",opts:["Sí","No"],ok:[0],msg:"Todos los sólidos mantienen su propia forma."},
+   {type:"mc",w:1,q:"¿Todos los sólidos son duros?",opts:["Sí","No"],ok:[1],msg:"¡No! La esponja y la pelota son blandas, pero también son sólidos."}]},
+ {id:"L2e",blk:"lab",peso:2,title:"Conclusión del especialista (2)",parts:[
+   {type:"open",w:1,q:"¿Qué características tienen TODOS los sólidos?",minWords:4,need:1,kw:[["forma"],["espacio"],["masa","peso"],["agarrar","tocar","coger"]],hint:"Piensa en la prueba de forma: ¿qué pasó con la forma de TODOS los sólidos?"}]},
+ {id:"A2a",blk:"act",peso:10,title:"Actividad de Aplicación #2 – Parte A: tabla de sólidos",parts:[
+   {type:"grid",w:1,q:"Completa la tabla con los sólidos que investigaste.",
+    cols:[["flota","¿Flota?",["Sí","No"]],["duro","¿Es duro?",["Sí","No"]],["iman","¿Atrae el imán?",["Sí","No"]],["forma","¿Qué forma tiene?",["Redonda","Rectangular","Irregular"]]],
+    rows:[{k:"pelota",label:"🎾 Pelota",ok:{flota:["Sí"],duro:null,iman:["No"],forma:["Redonda"]}},
+          {k:"roca",label:"🪨 Roca",ok:{flota:["No"],duro:["Sí"],iman:["No"],forma:["Irregular","Redonda"]}},
+          {k:"esponja",label:"🧽 Esponja",ok:{flota:null,duro:["No"],iman:["No"],forma:["Rectangular","Irregular"]}},
+          {k:"madera",label:"🪵 Madera",ok:{flota:["Sí"],duro:["Sí"],iman:["No"],forma:["Rectangular"]}},
+          {k:"metal",label:"🔩 Metal",ok:{flota:["No"],duro:["Sí"],iman:null,forma:null}},
+          {k:"plastico",label:"🥤 Plástico",ok:{flota:null,duro:null,iman:["No"],forma:null}}]}]},
+ {id:"A2b",blk:"act",peso:6,title:"🏠 TAREA – Parte B",parts:[
+   {type:"open",w:1,q:"¿Qué es un sólido?",minWords:5,need:2,kw:[["forma"],["espacio"],["masa","peso"],["materia"],["duro","agarrar","tocar"]],hint:"Un sólido es materia que… ¿qué pasa con su forma? ¿Ocupa espacio?"}]}
+]},
+{n:3,title:"Especialistas en Líquidos",sub:"Laboratorio de líquidos",sections:[
+ {id:"L3a",blk:"lab",peso:4,title:"🔍 Prueba de fluidez",parts:[
+   {type:"rank",w:3,q:"Velocidad de fluir: toca los líquidos en orden, del MÁS RÁPIDO (1) al MÁS LENTO (5).",items:LIQ,
+    rules:[{t:o=>o[4]==="miel",m:"La miel es la más lenta: va en el #5."},
+           {t:o=>o[3]==="aceite",m:"El aceite fluye más lento que el agua y el jugo, pero más rápido que la miel: va en el #4."},
+           {t:o=>["agua","color","jugo"].every(k=>o.indexOf(k)<3),m:"El agua, el agua con colorante y el jugo son los más rápidos (#1, #2 y #3)."}]}]},
+ {id:"L3b",blk:"lab",peso:4,title:"🔍 Prueba de forma",parts:[
+   {type:"yn",w:1,q:"¿Cambian de forma según el recipiente?",opts:["SÍ","NO"],rows:rows(LIQ,{agua:SI,color:SI,aceite:SI,miel:SI,jugo:SI},{miel:"La miel es lenta, pero también toma la forma del recipiente.",aceite:"El aceite toma la forma del recipiente."})}]},
+ {id:"L3c",blk:"lab",peso:4,title:"🫧 Burbujas y olor",parts:[
+   {type:"yn",w:1,q:"Prueba de burbujas: ¿Forman burbujas al agitar?",opts:["SÍ","NO"],rows:rows(LIQ,{agua:SN,color:SN,aceite:SN,miel:SN,jugo:SN})},
+   {type:"yn",w:1,q:"Prueba de olor: ¿Tienen olor?",opts:["SÍ","NO"],rows:rows(LIQ,{agua:NO,color:SN,aceite:SN,miel:SI,jugo:SI},{agua:"El agua natural no tiene olor.",jugo:"El jugo tiene olor a fruta.",miel:"La miel tiene un olor dulce."})}]},
+ {id:"L3d",blk:"lab",peso:4,title:"💡 Descubrimiento del día",parts:[
+   {type:"open",w:1,q:"¿Qué tienen en común TODOS los líquidos?",minWords:5,need:2,
+    kw:[["fluy","fluir","fluid","corre","derram","mueve"],["forma del","toman la forma","toma la forma","cambian de forma","cambia de forma","no tienen forma","recipiente","envase"],["espacio","volumen"],["masa","peso","materia"]],
+    hint:"Piensa en la prueba de forma y en la prueba de fluidez: ¿qué hicieron TODOS los líquidos?"}]},
+ {id:"A3a",blk:"act",peso:4,title:"Actividad de Aplicación #3 – 🧪 Experimento de flotabilidad",parts:[
+   {type:"objrows",w:1,n:3,q:"Busca 3 objetos y haz la prueba: ¿flotan o se hunden en el agua?",opts:["Flota","Se hunde"]}]},
+ {id:"A3b",blk:"act",peso:6,title:"📊 Dibujo científico",intro:"Cómo se ve el mismo líquido en diferentes recipientes:",parts:[
+   {type:"draw",w:1,label:"Recipiente alto y delgado"},
+   {type:"draw",w:1,label:"Recipiente ancho y bajo"},
+   {type:"mc",w:1,q:"Cuando pasas el líquido del recipiente alto al recipiente ancho, ¿qué cambia?",opts:["La forma","La cantidad de líquido","Nada cambia"],ok:[0],msg:"Cambia la forma: el líquido toma la forma del nuevo recipiente."},
+   {type:"mc",w:1,q:"¿La cantidad de líquido (su volumen) es la misma en los dos recipientes?",opts:["Sí, es la misma","No, cambia"],ok:[0],msg:"Es la misma cantidad. Solo cambió la forma, no el volumen."}]},
+ {id:"A3c",blk:"act",peso:3,title:"🏠 TAREA: ¿Qué es fluidez?",parts:[
+   {type:"open",w:1,q:"¿Qué es fluidez?",minWords:4,need:1,kw:[["flu","mover","mueve","corre","derram","rapid","lent","desliz"]],hint:"Piensa en la miel y el agua: ¿cuál se movía más rápido?"}]},
+ {id:"A3d",blk:"act",peso:3,title:"🏠 TAREA: ¿Qué es volumen?",parts:[
+   {type:"open",w:1,q:"¿Qué es volumen?",minWords:4,need:1,kw:[["espacio"],["ocupa"],["cantidad","cuanto"]],hint:"El volumen tiene que ver con el espacio que…"}]}
+]},
+{n:4,title:"Especialistas en Gases",sub:"Laboratorio de gases",sections:[
+ {id:"L4a",blk:"lab",peso:4,title:"🔍 Métodos de detección de gases",parts:[
+   {type:"checks",w:1,min:3,q:"Marca los métodos que usaste:",opts:["🎈 Inflé globos","📄 Moví papel con aire","🌬️ Sentí el viento","🫧 Observé burbujas","🌀 Usé abanico"]}]},
+ {id:"L4b",blk:"lab",peso:8,title:"🧪 Experimentos de detección",parts:[
+   {type:"mc",w:1,q:"🎈 Globos: ¿Qué observé al inflar el globo?",opts:["El globo se puso más pequeño","El globo se hizo más grande porque se llenó de aire","No pasó nada"],ok:[1],msg:"El aire ocupa espacio: por eso el globo crece."},
+   {type:"mc",w:1,q:"🎈 Globos: ¿Qué pasó cuando solté el globo?",opts:["Se quedó quieto","Se llenó de agua","El aire salió y el globo se movió"],ok:[2],msg:"El aire salió con fuerza y empujó el globo."},
+   {type:"mc",w:1,q:"📄 Papel: ¿Cómo se movió el papel?",opts:["El aire lo empujó y se movió","No se movió","Se mojó"],ok:[0],msg:"El aire no se ve, pero puede empujar el papel."},
+   {type:"mc",w:1,q:"📄 Papel: ¿Qué sentí en mi cara?",opts:["Agua","Nada","El aire (viento)"],ok:[2],msg:"Sentiste el aire moviéndose: eso es el viento."},
+   {type:"mc",w:1,q:"🫧 Burbujas: ¿Qué había dentro de las burbujas?",opts:["Agua","Aire","Nada"],ok:[1],msg:"Las burbujas están llenas de aire."},
+   {type:"mc",w:1,q:"🫧 Burbujas: ¿Qué pasó cuando explotaron?",opts:["El aire salió y se mezcló con el aire de afuera","Se convirtieron en piedras","El aire desapareció para siempre"],ok:[0],msg:"El aire no desaparece: sale y se mezcla con el aire de afuera."}]},
+ {id:"L4c",blk:"lab",peso:4,title:"🌎 Como especialista ambiental: gases que respiramos",parts:[
+   {type:"mc",w:1,q:"Gas bueno (lo necesitamos para respirar):",opts:["Humo","Oxígeno","Vapor de jugo"],ok:[1],msg:"Necesitamos oxígeno para respirar."},
+   {type:"mc",w:1,q:"Gas peligroso:",opts:["Oxígeno","Agua","Humo de carros y fábricas (monóxido de carbono)"],ok:[2],msg:"El humo de carros y fábricas contamina el aire y hace daño."}]},
+ {id:"A4a",blk:"act",peso:5,title:"Actividad de Aplicación #4 – 🌎 Mi propuesta como especialista",parts:[
+   {type:"open",w:1,q:"Para cuidar el aire propongo:",minWords:5,need:1,kw:[["arbol","planta","sembr"],["humo","quem","basura","fuego"],["carro","guagua","camin","bicicleta"],["fabrica","contamin"],["recicl","limpi","apag","ahorr"]],hint:"Piensa en qué ensucia el aire (humo, basura quemada, carros) y qué podemos hacer."}]},
+ {id:"A4b",blk:"act",peso:4,title:"¿Por qué es importante?",parts:[
+   {type:"open",w:1,q:"¿Por qué es importante tu propuesta?",minWords:5,need:1,kw:[["respir"],["oxigeno","aire limpio","aire puro"],["salud","enferm","sano","vida","vivir","vivos"],["planeta","tierra","ambiente","animales","plantas"]],hint:"¿Qué le pasa a nuestra salud y a los seres vivos si el aire está sucio?"}]},
+ {id:"A4c",blk:"act",peso:3,title:"🎨 Dibujo de mi propuesta",parts:[{type:"draw",w:1,label:"Dibuja tu propuesta para cuidar el aire."}]},
+ {id:"A4d",blk:"act",peso:4,title:"🏠 TAREA",parts:[
+   {type:"open",w:1,q:"¿En qué se parecen los líquidos y los gases?",minWords:5,need:1,kw:[["flu"],["forma del","toman la forma","toma la forma","no tienen forma","cambian de forma","recipiente"],["espacio","materia","masa"]],hint:"Piensa: ¿tienen forma propia los líquidos? ¿Y los gases? ¿Qué pasa con el aire dentro de un globo?"}]}
+]},
+{n:5,title:"Prueba de certificación",sub:"Actividad de Aplicación #5 – Evaluación final",exam:true,sections:[
+ {id:"EA",blk:"exam",peso:8,title:"Parte A: Selecciona la respuesta correcta (2 puntos cada una)",parts:[
+   {type:"mc",w:1,q:"1. Los especialistas saben que la materia es:",opts:["Solo lo que podemos ver","Todo lo que tiene masa y ocupa espacio","Solo los objetos grandes"],ok:[1]},
+   {type:"mc",w:1,q:"2. Un sólido se caracteriza por:",opts:["Ser invisible","Cambiar de forma fácilmente","Mantener su forma propia"],ok:[2]},
+   {type:"mc",w:1,q:"3. Los líquidos:",opts:["Toman la forma del recipiente","Nunca cambian de forma","No fluyen"],ok:[0]},
+   {type:"mc",w:1,q:"4. Los gases:",opts:["Siempre los podemos ver","No ocupan espacio","Podemos sentirlos, aunque no los veamos"],ok:[2]}]},
+ {id:"EB",blk:"exam",peso:6,title:"Parte B: Da un ejemplo de cada estado que encuentres en tu escuela",parts:[
+   {type:"example",w:1,cat:"s",label:"Sólido:"},{type:"example",w:1,cat:"l",label:"Líquido:"},{type:"example",w:1,cat:"g",label:"Gas:"}]},
+ {id:"EC",blk:"exam",peso:6,title:"Parte C: Características principales",intro:"Describe las características de los 3 estados de la materia.",parts:[
+   {type:"open",w:1,q:"SÓLIDOS – Características:",minWords:2,need:1,kw:[["forma propia","su forma","mantiene","forma definida","no cambia","no cambian"],["duro","agarrar"]]},
+   {type:"example",w:1,cat:"s",label:"SÓLIDOS – Ejemplos:"},
+   {type:"open",w:1,q:"LÍQUIDOS – Características:",minWords:2,need:1,kw:[["flu","derram","corre"],["forma del","toman la forma","toma la forma","cambia","recipiente","envase"]]},
+   {type:"example",w:1,cat:"l",label:"LÍQUIDOS – Ejemplos:"},
+   {type:"open",w:1,q:"GASES – Características:",minWords:2,need:1,kw:[["no se ve","invisible","no lo vemos","no los vemos","no se pueden ver"],["se siente","sentir","sentimos"],["todo el espacio","llena","expand","no tiene forma","no tienen forma"]]},
+   {type:"example",w:1,cat:"g",label:"GASES – Ejemplos:"}]},
+ {id:"ED",blk:"exam",peso:10,title:"Parte D: Vocabulario del especialista",intro:"Lee cada situación. ¿Cuál concepto científico está sucediendo? Los conceptos son: fluidez, forma, volumen y observación.",parts:[
+   {type:"mc",w:1,story:"Estás en el patio de la escuela. Ves a un compañero jugando con una pelota de goma. Primero está en su mano redonda. Luego la lanza y vuela por el aire. Después rebota en el piso y sigue saltando. La pelota siempre se ve igual: redonda y roja.",q:"1. ¿Cuál concepto explica mejor que la pelota siga siendo redonda, aunque la lancen y rebote?",opts:["A) Fluidez","B) Forma","C) Volumen"],ok:[1]},
+   {type:"mc",w:1,story:"En el comedor, el maestro vierte jugo de limón de una jarra grande a un vaso pequeño. El jugo baja, baja, baja… y llena el vaso. Luego el maestro lo vierte en otro vaso diferente, más ancho. El jugo toma la forma del nuevo vaso.",q:"2. ¿Cuál concepto explica que el jugo toma la forma de cada vaso?",opts:["A) Fluidez","B) Forma","C) Volumen"],ok:[1]},
+   {type:"mc",w:1,story:"Tienes una botella de plástico vacía. Luego la llenas completamente de agua. La botella sigue teniendo el mismo tamaño, pero ahora el agua ocupa todo el espacio de adentro.",q:"3. ¿Cuál concepto usamos para saber cuánto espacio ocupa el agua dentro de la botella?",opts:["A) Observación","B) Forma","C) Volumen"],ok:[2]},
+   {type:"mc",w:1,story:"Haces burbujas de jabón en el laboratorio. Miras cada burbuja con cuidado. Ves que son redondas, brillantes y llenas de aire. Cuando explotan, el aire sale y la burbuja desaparece.",q:"4. Cuando miras las burbujas con cuidado para descubrir cómo son, ¿qué estás haciendo?",opts:["A) Observación","B) Forma","C) Volumen"],ok:[0]},
+   {type:"mc",w:1,story:"Tu mamá está cocinando. Vierte aceite de una botella a una sartén. El aceite baja lentamente, se mueve y llena la sartén. Es más lento que el agua, pero sigue fluyendo.",q:"5. ¿Cuál concepto explica que el aceite se mueve y corre cuando lo viertes?",opts:["A) Forma","B) Observación","C) Fluidez"],ok:[2]}]},
+ {id:"EM",blk:"none",peso:0,title:"🎯 Próxima misión (no cuenta para nota)",intro:"La próxima clase los especialistas investigarán: «Los cambios de estado de la materia».",parts:[
+   {type:"open",w:0,q:"¿Qué crees que pasará cuando un sólido se convierte en líquido? 🧊➡️💧",minWords:1,need:0,kw:[]}]}
+]}
+];
+const SEC={};DAYS.forEach(d=>d.sections.forEach(s=>{s.day=d.n;s.exam=!!d.exam;SEC[s.id]=s;}));
+const BLKN={lab:"🔬 Laboratorio",act:"📝 Actividad de aplicación",exam:"📋 Prueba de certificación",none:""};
+
+/* =========================================================
+   4) CORRECCIÓN
+   Cada parte devuelve f (0 a 1, o null = pendiente para el maestro)
+   ========================================================= */
+function gradePart(p,a,sec,i){
+  const out={f:0,items:{},msg:"",kind:"auto",vista:[]};
+  switch(p.type){
+    case "inputs":{const v=(a||[]);const filled=p.labels.filter((_,j)=>(v[j]||"").trim()).length;out.f=filled/p.labels.length;out.kind="comp";out.vista=p.labels.map((l,j)=>({q:l,a:v[j]||""}));break;}
+    case "yn":{let c=0;p.rows.forEach(r=>{const ok=a&&r.ok.includes(a[r.k]);out.items[r.k]=ok;if(ok)c++;out.vista.push({q:r.label,a:a?.[r.k]||"",ok});});out.f=c/p.rows.length;if(p.rows.every(r=>r.ok.length>1))out.kind="comp";break;}
+    case "grid":{let c=0,t=0;p.rows.forEach(r=>p.cols.forEach(([ck,cl])=>{t++;const v=a?.[r.k]?.[ck];const acc=r.ok[ck];const ok=!!v&&(!acc||acc.includes(v));out.items[r.k+"|"+ck]=ok;if(ok)c++;}));out.f=c/t;out.vista=p.rows.map(r=>({q:r.label,a:p.cols.map(([ck,cl])=>cl+" "+(a?.[r.k]?.[ck]||"—")).join(" · ")}));break;}
+    case "mc":{const ok=p.ok.includes(a);out.f=ok?1:0;out.items.mc=ok;out.vista=[{q:(p.q||""),a:a!=null?p.opts[a]:"",ok}];break;}
+    case "rank":{const o=a||[];const res=p.rules.map(r=>o.length===p.items.length&&r.t(o));out.f=res.filter(Boolean).length/p.rules.length;out.items.rules=res;out.vista=[{q:"Orden",a:o.map((k,j)=>(j+1)+". "+(p.items.find(x=>x[0]===k)||[])[1]).join(", ")}];break;}
+    case "classify":{let c=0;p.items.forEach(([k,l,e,b])=>{const ok=a?.[k]===b;out.items[k]=ok;if(ok)c++;});out.f=c/p.items.length;out.vista=p.bins.map(([bk,bl])=>({q:bl,a:p.items.filter(it=>a?.[it[0]]===bk).map(it=>it[1]).join(", ")}));break;}
+    case "open":{const t=norm(a);const wc=words(a);let hits=0;const found=[];(p.kw||[]).forEach(g=>{if(g.some(k=>t.includes(norm(k).trim())))hits++;});
+      out.kind="rev";
+      if(wc<p.minWords){out.f=0;out.msg=p.hint||"Escribe una respuesta más completa.";out.good=false;}
+      else{out.f=p.need===0?1:Math.min(1,(1+hits)/(1+p.need));out.good=p.need===0||hits>0;out.msg=out.good?"":(p.hint||"");}
+      out.vista=[{q:p.q,a:a||""}];break;}
+    case "draw":{out.f=a?1:0;out.kind="comp";out.vista=[{q:p.label,img:a||""}];break;}
+    case "example":{const f=catOf(a);out.kind="ex";
+      if(!String(a||"").trim()){out.f=0;out.items.ex=false;}
+      else if(f.has(p.cat)&&f.size===1){out.f=1;out.items.ex=true;}
+      else if(!f.has(p.cat)&&f.size>0){out.f=0;out.items.ex=false;out.msg="Eso parece un "+[...f].map(c=>CATN[c]).join(" o ")+", no un "+CATN[p.cat]+".";}
+      else{out.f=null;out.items.ex=null;out.msg="Tu maestro revisará este ejemplo.";}
+      out.vista=[{q:p.label,a:a||"",ok:out.items.ex}];break;}
+    case "checks":{const n=(a||[]).length;out.f=Math.min(1,n/p.min);out.kind="comp";out.vista=[{q:p.q,a:(a||[]).map(j=>p.opts[j]).join(", ")}];break;}
+    case "objrows":{const v=a||[];let c=0;for(let j=0;j<p.n;j++){if((v[j]?.n||"").trim()&&v[j]?.v)c++;}out.f=c/p.n;out.kind="comp";out.vista=v.map((r,j)=>({q:"Objeto "+(j+1),a:(r?.n||"")+" → "+(r?.v||"")}));break;}
+    case "criterio":{const g=critGrade(a);out.f=g.f;out.items=g.items;out.msg=g.msg;out.vista=[{q:"Criterio",a:g.label},{q:g.g1,a:MATS.filter(m=>a?.asg?.[m[0]]===1).map(m=>m[1]).join(", ")},{q:g.g2,a:MATS.filter(m=>a?.asg?.[m[0]]===2).map(m=>m[1]).join(", ")}];break;}
+  }
+  return out;
+}
+const CRIT={flota:{label:"¿Flota o se hunde?",g1:"Flotan",g2:"Se hunden"},iman:{label:"¿Lo atrae el imán?",g1:"El imán los atrae",g2:"El imán no los atrae"},duro:{label:"¿Duro o blando?",g1:"Duros",g2:"Blandos"}};
+function critGrade(a){
+  const c=CRIT[a?.crit];if(!c)return{f:0,items:{},label:"",g1:"Grupo 1",g2:"Grupo 2",msg:""};
+  const own=ANS.L2b||{};const items={};let ok=0;
+  MATS.forEach(([k])=>{
+    let acc;// grupos aceptados (1 o 2)
+    if(a.crit==="flota"){const v=own.p0?.[k];acc=v?[v==="Flota"?1:2]:(SEC.L2b.parts[0].rows.find(r=>r.k===k).ok.map(x=>x==="Flota"?1:2));}
+    else if(a.crit==="iman"){const v=own.p1?.[k];acc=v?[v==="SÍ"?1:2]:(SEC.L2b.parts[1].rows.find(r=>r.k===k).ok.map(x=>x==="SÍ"?1:2));}
+    else acc={roca:[1],madera:[1],metal:[1],esponja:[2],pelota:[2],plastico:[1,2]}[k];
+    const r=acc.includes(a.asg?.[k]);items[k]=r;if(r)ok++;
+  });
+  let f=ok/MATS.length;const used=new Set(Object.values(a.asg||{}));
+  let msg=a.crit==="flota"||a.crit==="iman"?"Se comparó con los resultados que TÚ anotaste en tus pruebas.":"";
+  if(used.size<2){f=Math.min(f,0.5);msg="Debes usar los dos grupos.";}
+  return{f,items,label:c.label,g1:c.g1,g2:c.g2,msg};
+}
+function gradeSection(sec,ans){
+  let num=0,den=0,pend=false,rev=false;const parts=[];const vista=[];
+  sec.parts.forEach((p,i)=>{const g=gradePart(p,ans["p"+i],sec,i);parts.push(g);vista.push(...g.vista.map(v=>({...v,kind:g.kind,f:g.f})));
+    if(p.w>0){den+=p.w;if(g.f===null)pend=true;else num+=g.f*p.w;if(g.kind==="rev"||(g.kind==="comp"&&p.type==="draw"))rev=true;}});
+  const pts=den?r1(num/den*sec.peso):0;
+  return{pts,parts,vista,estado:pend?"pendiente":rev?"revisar":"ok"};
+}
+function missing(sec,ans){
+  const m=[];sec.parts.forEach((p,i)=>{const a=ans["p"+i];
+    if(p.type==="yn"&&(!a||p.rows.some(r=>!a[r.k])))m.push(p.q);
+    if(p.type==="grid"&&(!a||p.rows.some(r=>p.cols.some(([ck])=>!a[r.k]?.[ck]))))m.push("la tabla completa");
+    if(p.type==="mc"&&a==null)m.push(p.q.slice(0,50));
+    if(p.type==="rank"&&(!a||a.length<p.items.length))m.push("el orden completo");
+    if(p.type==="classify"&&(!a||p.items.some(it=>!a[it[0]])))m.push("clasificar todos los materiales");
+    if(p.type==="open"&&p.w>0&&!String(a||"").trim())m.push(p.q);
+    if(p.type==="example"&&!String(a||"").trim())m.push(p.label);
+    if(p.type==="criterio"&&(!a?.crit||MATS.some(([k])=>!a.asg?.[k])))m.push("escoger criterio y colocar todos los materiales");
+  });return m;
+}
+
+/* =========================================================
+   5) ESTADO Y GUARDADO
+   ========================================================= */
+let ME=null, CONF={dias:{},roster:[]}, DAY=1;
+const REC={};   // registros guardados por sección
+const ANS={};   // respuestas en progreso por sección
+const draftKey=()=>"bm_draft_"+ME.slug;
+function saveDraft(){try{localStorage.setItem(draftKey(),JSON.stringify(ANS))}catch(e){}}
+function loadDraft(){try{Object.assign(ANS,JSON.parse(localStorage.getItem(draftKey()))||{})}catch(e){}}
+const docId=d=>ME.slug+"_d"+d;
+
+async function loadStudent(){
+  loadDraft();
+  for(const d of DAYS){const doc=await DB.getDoc(docId(d.n)).catch(()=>null);
+    if(doc&&doc.secciones)for(const id in doc.secciones){REC[id]=doc.secciones[id];if(doc.secciones[id].ans)ANS[id]=doc.secciones[id].ans;}}
+}
+async function persist(sec,g,final){
+  const rec={pts:g.pts,max:sec.peso,blk:sec.blk,estado:g.estado,final,intentos:(REC[sec.id]?.intentos||0)+1,ans:ANS[sec.id],vista:g.vista,titulo:sec.title,fecha:new Date().toISOString()};
+  REC[sec.id]=rec;
+  await DB.merge(docId(sec.day),{nombre:ME.nombre,slug:ME.slug,dia:sec.day,actualizado:new Date().toISOString(),secciones:{[sec.id]:rec}});
+}
+
+/* =========================================================
+   6) PANTALLAS
+   ========================================================= */
+function login(){
+  document.body.className="d1";
+  const r=CONF.roster||[];
+  $("#app").innerHTML=`<div class="login"><div style="font-size:60px">🔬</div><h1>Bitácora del Especialista en Materia</h1><p>Tercer grado · Semana 6</p>
+  ${r.length?`<select id="who"><option value="">— Escoge tu nombre —</option>${r.map(n=>`<option>${esc(n)}</option>`).join("")}</select>`:`<input id="who" type="text" placeholder="Escribe tu nombre y apellido">`}
+  <button class="btn go" id="enter" style="width:100%;margin-top:14px">Entrar 🚀</button></div>`;
+  $("#enter").onclick=async()=>{const n=$("#who").value.trim();if(!n)return toast("Escoge tu nombre");
+    ME={nombre:n,slug:slug(n)};try{localStorage.setItem("bm_me",JSON.stringify(ME))}catch(e){}
+    $("#app").innerHTML='<div class="locked">Cargando tu bitácora…</div>';await loadStudent();main();};
+}
+function dayTotals(n){const t={lab:0,act:0,exam:0,pend:0};DAYS[n-1].sections.forEach(s=>{const r=REC[s.id];if(r&&r.final){t[s.blk]=(t[s.blk]||0)+r.pts;if(r.estado!=="ok")t.pend++;}});return t;}
+function main(){
+  document.body.className="d"+DAY;
+  const d=DAYS[DAY-1];const open=!!CONF.dias?.[DAY];
+  const t=dayTotals(DAY);
+  let h=`<header class="top"><div class="row"><h1>🔬 Bitácora del Especialista</h1><span class="who">👤 ${esc(ME.nombre)}</span><a id="out">cambiar</a></div></header><div class="wrap">
+  <div class="tabs">${DAYS.map(x=>`<div class="tab ${x.n===DAY?"on":""} ${CONF.dias?.[x.n]?"":"lock"}" data-d="${x.n}">${CONF.dias?.[x.n]?"":"🔒 "}Día ${x.n}<small>${x.title}</small></div>`).join("")}</div>`;
+  if(!open){h+=`<div class="locked">🔒 El Día ${DAY} todavía está cerrado.<br>Tu maestro lo abrirá cuando sea el momento.</div></div>`;$("#app").innerHTML=h;bindTop();return;}
+  h+=`<div class="banner"><small>DÍA ${DAY}</small><h2>${d.title}</h2>${d.sub}</div><div class="score">`+
+    (d.exam?`<span class="pill">Prueba: <b>${r1(t.exam)}</b> / 30</span>`:`<span class="pill">Laboratorio: <b>${r1(t.lab)}</b> / 16</span><span class="pill">Actividad: <b>${r1(t.act)}</b> / 16</span>`)+
+    (t.pend?`<span class="pill">⏳ ${t.pend} por revisar del maestro</span>`:"")+`</div>`;
+  let last="";
+  d.sections.forEach(s=>{if(s.blk!==last){h+=`<h3 class="blk">${BLKN[s.blk]}</h3>`;last=s.blk;}h+=`<div class="sec" id="s_${s.id}"></div>`;});
+  h+="</div>";$("#app").innerHTML=h;bindTop();
+  d.sections.forEach(s=>renderSec(s));
+}
+function bindTop(){
+  document.querySelectorAll(".tab").forEach(e=>e.onclick=()=>{DAY=+e.dataset.d;main();window.scrollTo(0,0);});
+  $("#out").onclick=()=>{try{localStorage.removeItem("bm_me")}catch(e){}location.reload();};
+}
+
+/* ---------- Render de sección ---------- */
+function renderSec(sec){
+  const box=$("#s_"+sec.id);const rec=REC[sec.id];const final=rec&&rec.final;
+  const ans=ANS[sec.id]=ANS[sec.id]||{};
+  const g=(rec)?gradeSection(sec,ans):null;
+  box.className="sec"+(final?" done":"");
+  let h=`<h4>${sec.title}<span class="pts">${sec.peso?(final?`<b>${rec.pts}</b> / ${sec.peso} pts`:`${sec.peso} pts`):""}</span></h4>${sec.intro?`<div class="q">${sec.intro}</div>`:""}`;
+  sec.parts.forEach((p,i)=>{h+=`<div class="part" id="p_${sec.id}_${i}"></div>`;});
+  if(!final)h+=`<button class="btn go" id="v_${sec.id}">✔ Verificar</button>`;
+  h+=`<div id="r_${sec.id}"></div>`;
+  box.innerHTML=h;
+  sec.parts.forEach((p,i)=>renderPart(sec,p,i,$(`#p_${sec.id}_${i}`),final,(final||rec)?g.parts[i]:null));
+  if(final)showResult(sec,rec,g);
+  else if(rec){$(`#r_${sec.id}`).innerHTML=`<div class="result msg rev">💡 Puedes mejorar tu respuesta una vez más antes de enviarla. Lee la pista.</div>`;}
+  const vb=$("#v_"+sec.id);if(vb)vb.onclick=()=>verify(sec);
+}
+function showResult(sec,rec,g){
+  const el=$(`#r_${sec.id}`);
+  let cls="ok",txt;
+  if(sec.exam){txt=`✔ Sección enviada. Puntos: ${rec.pts} / ${sec.peso}`;}
+  else if(rec.pts>=sec.peso*0.99)txt=`🌟 ¡Excelente, especialista! ${rec.pts} / ${sec.peso}`;
+  else{txt=`✔ Sección completada: ${rec.pts} / ${sec.peso}. Lee las correcciones para aprender.`;cls="rev";}
+  if(rec.estado==="pendiente")txt+=" · ⏳ Tu maestro revisará algunas respuestas.";
+  else if(rec.estado==="revisar")txt+=" · ✍️ Tu maestro revisará tu escrito y puede ajustar los puntos.";
+  if(sec.peso===0)txt="✔ ¡Gracias! Tu predicción fue enviada.";
+  el.innerHTML=`<div class="result msg ${cls}">${txt}</div>`;
+}
+async function verify(sec){
+  const ans=ANS[sec.id]||{};const m=missing(sec,ans);
+  if(m.length){toast("Te falta: "+m[0]);return;}
+  const g=gradeSection(sec,ans);
+  const retryable=!sec.exam&&sec.parts.every(p=>["open","inputs","draw","checks","objrows"].includes(p.type));
+  const weak=g.parts.some((x,i)=>sec.parts[i].type==="open"&&sec.parts[i].w>0&&!x.good);
+  const first=!REC[sec.id];
+  const final=!(retryable&&weak&&first);
+  const btn=$("#v_"+sec.id);btn.disabled=true;btn.textContent="Guardando…";
+  try{await persist(sec,g,final);saveDraft();}
+  catch(e){console.error(e);btn.disabled=false;btn.textContent="✔ Verificar";return toast("No se pudo guardar. Revisa el internet y vuelve a intentar.");}
+  renderSec(sec);refreshScore();
+  if(!final)toast("💡 Lee la pista y mejora tu respuesta");
+}
+function refreshScore(){const t=dayTotals(DAY);const d=DAYS[DAY-1];const sc=$(".score");if(!sc)return;
+  sc.innerHTML=(d.exam?`<span class="pill">Prueba: <b>${r1(t.exam)}</b> / 30</span>`:`<span class="pill">Laboratorio: <b>${r1(t.lab)}</b> / 16</span><span class="pill">Actividad: <b>${r1(t.act)}</b> / 16</span>`)+(t.pend?`<span class="pill">⏳ ${t.pend} por revisar del maestro</span>`:"");}
+
+/* ---------- Render de partes ---------- */
+function renderPart(sec,p,i,el,ro,g){
+  const A=ANS[sec.id];const key="p"+i;const set=v=>{A[key]=v;saveDraft();};
+  const showKey=ro&&!sec.exam; // mostrar respuestas correctas (no en la prueba)
+  const fbmsg=t=>t?`<div class="msg ${g&&g.good===false||g?.items?.ex===false?"no":"rev"}">${t}</div>`:"";
+  switch(p.type){
+  case "inputs":{const v=A[key]||[];
+    el.innerHTML=(p.head?`<div class="q">${p.head}</div>`:"")+p.labels.map((l,j)=>`<label class="lbl">${l}</label><input type="text" data-j="${j}" value="${esc(v[j]||"")}" ${ro?"disabled":""}>`).join("");
+    el.querySelectorAll("input").forEach(inp=>inp.oninput=()=>{const a=A[key]||[];a[+inp.dataset.j]=inp.value;set(a);});break;}
+  case "yn":{const v=A[key]||{};
+    el.innerHTML=`<div class="q">${p.q}</div><table class="yn">${p.rows.map(r=>{const st=ro?(g.items[r.k]?"ok":"no"):"";
+      return `<tr class="${st}"><td>${r.emoji||""} ${r.label}</td><td><div class="opts">${p.opts.map(o=>{let c=v[r.k]===o?"sel":"";if(ro){c=v[r.k]===o?(g.items[r.k]?"right":"wrong"):(showKey&&!g.items[r.k]&&r.ok.includes(o)?"key":"");}
+      return `<span class="o ${c}" data-k="${r.k}" data-o="${o}">${o}</span>`}).join("")}</div>${ro&&showKey&&!g.items[r.k]&&r.msg?`<div class="msg no">${r.msg}</div>`:""}${ro&&showKey&&r.ok.length>1&&r.msg?`<div class="msg rev">${r.msg}</div>`:""}</td></tr>`}).join("")}</table>`;
+    if(!ro)el.querySelectorAll(".o").forEach(o=>o.onclick=()=>{const a=A[key]||{};a[o.dataset.k]=o.dataset.o;set(a);renderPart(sec,p,i,el,ro,g);});break;}
+  case "grid":{const v=A[key]||{};
+    el.innerHTML=`<div class="q">${p.q}</div><div style="overflow-x:auto"><table class="yn"><tr><th>Sólido</th>${p.cols.map(c=>`<th>${c[1]}</th>`).join("")}</tr>${p.rows.map(r=>`<tr><td>${r.label}</td>${p.cols.map(([ck,cl,opts])=>`<td><select data-r="${r.k}" data-c="${ck}" ${ro?"disabled":""} style="${ro?(g.items[r.k+"|"+ck]?"border-color:var(--ok);background:var(--okbg)":"border-color:var(--bad);background:var(--badbg)"):""}"><option value="">—</option>${opts.map(o=>`<option ${v[r.k]?.[ck]===o?"selected":""}>${o}</option>`).join("")}</select></td>`).join("")}</tr>`).join("")}</table></div>`;
+    if(!ro)el.querySelectorAll("select").forEach(s=>s.onchange=()=>{const a=A[key]||{};a[s.dataset.r]=a[s.dataset.r]||{};a[s.dataset.r][s.dataset.c]=s.value;set(a);});break;}
+  case "mc":{const v=A[key];
+    el.innerHTML=(p.story?`<div class="story">${p.story}</div>`:"")+`<div class="q">${p.q}</div><div class="mc">${p.opts.map((o,j)=>{let c=v===j?"sel":"";if(ro){c=v===j?(p.ok.includes(j)?"right":"wrong"):(showKey&&!p.ok.includes(v)&&p.ok.includes(j)?"key":"");}return `<span class="o ${c}" data-j="${j}">${o}</span>`;}).join("")}</div>${ro&&showKey&&p.msg?`<div class="msg ${g.items.mc?"ok":"no"}">${g.items.mc?"✔ ":"✘ "}${p.msg}</div>`:""}`;
+    if(!ro)el.querySelectorAll(".o").forEach(o=>o.onclick=()=>{set(+o.dataset.j);renderPart(sec,p,i,el,ro,g);});break;}
+  case "rank":{const v=A[key]||[];
+    el.innerHTML=`<div class="q">${p.q}</div><div class="rank">${p.items.map(([k,l,e])=>{const n=v.indexOf(k);return `<span class="o ${n>=0?"sel":""}" data-k="${k}"><span class="n">${n>=0?n+1:"?"}</span>${e} ${l}</span>`}).join("")}</div>${ro?"":`<button class="btn sm" data-reset>↺ Empezar de nuevo</button>`}`+
+      (ro?g.items.rules.map((ok,j)=>ok?"":(showKey?`<div class="msg no">✘ ${p.rules[j].m}</div>`:"")).join("")+(g.f===1?`<div class="msg ok">✔ ¡Orden correcto!</div>`:""):"");
+    if(!ro){el.querySelectorAll(".o").forEach(o=>o.onclick=()=>{const a=(A[key]||[]).slice();const k=o.dataset.k;const ix=a.indexOf(k);if(ix>=0)a.splice(ix,1);else a.push(k);set(a);renderPart(sec,p,i,el,ro,g);});
+      el.querySelector("[data-reset]").onclick=()=>{set([]);renderPart(sec,p,i,el,ro,g);};}break;}
+  case "classify":{const v=A[key]||{};const selK=el._sel;
+    const chip=([k,l,e])=>`<span class="chip ${selK===k?"sel":""} ${ro?(g.items[k]?"right":"wrong"):""}" data-k="${k}">${e} ${l}</span>`;
+    el.innerHTML=`<div class="q">${p.q}</div><div class="bank" data-bin="">${p.items.filter(it=>!v[it[0]]).map(chip).join("")||'<span style="color:var(--mut);font-size:16px">¡Todos clasificados!</span>'}</div><div class="bins">${p.bins.map(([bk,bl])=>`<div class="bin" data-bin="${bk}"><h5>${bl}</h5>${p.items.filter(it=>v[it[0]]===bk).map(chip).join("")}</div>`).join("")}</div>`+
+      (ro&&showKey?p.items.filter(it=>!g.items[it[0]]).map(it=>`<div class="msg no">✘ ${it[2]} ${it[1]} va en: ${p.bins.find(b=>b[0]===it[3])[1]}</div>`).join(""):"");
+    if(!ro){el.querySelectorAll(".chip").forEach(c=>c.onclick=ev=>{if(el._sel&&el._sel!==c.dataset.k)return;/* deja que el grupo reciba el toque */ev.stopPropagation();el._sel=el._sel===c.dataset.k?null:c.dataset.k;renderPart(sec,p,i,el,ro,g);});
+      el.querySelectorAll("[data-bin]").forEach(b=>b.onclick=()=>{if(!el._sel)return toast("Primero toca un material");const a=A[key]||{};if(b.dataset.bin)a[el._sel]=b.dataset.bin;else delete a[el._sel];el._sel=null;set(a);renderPart(sec,p,i,el,ro,g);});}break;}
+  case "open":{const v=A[key]||"";
+    el.innerHTML=`<label class="lbl">${p.q}</label><textarea ${ro?"disabled":""} placeholder="Escribe aquí en oraciones completas…">${esc(v)}</textarea>`+
+      (g&&!sec.exam&&p.w>0?(g.good?(ro?`<div class="msg ok">✔ ¡Buena respuesta! Tu maestro la leerá.</div>`:""):`<div class="msg rev">💡 Pista: ${g.msg}</div>`):"");
+    if(!ro)el.querySelector("textarea").oninput=e=>set(e.target.value);break;}
+  case "example":{const v=A[key]||"";
+    el.innerHTML=`<label class="lbl">${p.label}</label><input type="text" value="${esc(v)}" ${ro?"disabled":""} placeholder="Escribe el nombre">`+
+      (ro?(g.items.ex===true?(sec.exam?"":`<div class="msg ok">✔ ¡Correcto! Es un ${CATN[p.cat]}.</div>`):g.items.ex===false?(sec.exam?"":`<div class="msg no">✘ ${g.msg||"Revisa tu ejemplo."}</div>`):`<div class="msg rev">⏳ ${g.msg}</div>`):"");
+    if(!ro)el.querySelector("input").oninput=e=>set(e.target.value);break;}
+  case "checks":{const v=A[key]||[];
+    el.innerHTML=`<div class="q">${p.q}</div><div class="opts">${p.opts.map((o,j)=>`<span class="o ${v.includes(j)?"sel":""}" data-j="${j}">${v.includes(j)?"☑":"☐"} ${o}</span>`).join("")}</div>`;
+    if(!ro)el.querySelectorAll(".o").forEach(o=>o.onclick=()=>{const a=(A[key]||[]).slice();const j=+o.dataset.j;const ix=a.indexOf(j);if(ix>=0)a.splice(ix,1);else a.push(j);set(a);renderPart(sec,p,i,el,ro,g);});break;}
+  case "objrows":{const v=A[key]||[];
+    el.innerHTML=`<div class="q">${p.q}</div><table class="yn">${Array.from({length:p.n},(_,j)=>`<tr><td style="width:55%"><input type="text" data-j="${j}" value="${esc(v[j]?.n||"")}" placeholder="Objeto ${j+1}" ${ro?"disabled":""}></td><td><div class="opts">${p.opts.map(o=>`<span class="o ${v[j]?.v===o?"sel":""}" data-j="${j}" data-o="${o}">${o}</span>`).join("")}</div></td></tr>`).join("")}</table>`;
+    if(!ro){el.querySelectorAll("input").forEach(inp=>inp.oninput=()=>{const a=A[key]||[];const j=+inp.dataset.j;a[j]=a[j]||{};a[j].n=inp.value;set(a);});
+      el.querySelectorAll(".o").forEach(o=>o.onclick=()=>{const a=A[key]||[];const j=+o.dataset.j;a[j]=a[j]||{};a[j].v=o.dataset.o;set(a);renderPart(sec,p,i,el,ro,g);});}break;}
+  case "draw":{const v=A[key];
+    if(ro){el.innerHTML=`<div class="lbl">${p.label}</div>`+(v?`<img class="drawn" src="${v}">`:`<div class="msg no">Sin dibujo</div>`);break;}
+    el.innerHTML=`<div class="lbl">🎨 ${p.label}</div><div class="padbar"></div><canvas class="pad"></canvas>`;
+    makePad(el,v,d=>set(d));break;}
+  case "criterio":{const v=A[key]||{};const c=CRIT[v.crit];
+    let h=`<div class="q">1) Escoge el criterio para clasificar tus sólidos:</div><div class="opts">${Object.entries(CRIT).map(([k,x])=>`<span class="o ${v.crit===k?"sel":""}" data-c="${k}">${x.label}</span>`).join("")}</div>`;
+    if(c){h+=`<div class="q" style="margin-top:12px">2) Coloca cada sólido en su grupo:</div><table class="yn">${MATS.map(([k,l,e])=>`<tr class="${ro?(g.items[k]?"ok":"no"):""}"><td>${e} ${l}</td><td><div class="opts">${[1,2].map(n=>{let cl=v.asg?.[k]===n?"sel":"";if(ro&&v.asg?.[k]===n)cl=g.items[k]?"right":"wrong";return `<span class="o ${cl}" data-k="${k}" data-g="${n}">${n===1?c.g1:c.g2}</span>`}).join("")}</div></td></tr>`).join("")}</table>`;}
+    if(ro&&g.msg)h+=`<div class="msg rev">${g.msg}</div>`;
+    el.innerHTML=h;
+    if(!ro){el.querySelectorAll("[data-c]").forEach(o=>o.onclick=()=>{set({crit:o.dataset.c,asg:{}});renderPart(sec,p,i,el,ro,g);});
+      el.querySelectorAll("[data-g]").forEach(o=>o.onclick=()=>{const a=A[key];a.asg=a.asg||{};a.asg[o.dataset.k]=+o.dataset.g;set(a);renderPart(sec,p,i,el,ro,g);});}break;}
+  }
+}
+
+/* ---------- Pizarra de dibujo ---------- */
+function makePad(el,initial,onSave){
+  const cv=el.querySelector("canvas"),bar=el.querySelector(".padbar");
+  const W=600,H=360;cv.width=W;cv.height=H;const ctx=cv.getContext("2d");
+  ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);ctx.lineCap="round";ctx.lineJoin="round";
+  if(initial){const im=new Image();im.onload=()=>ctx.drawImage(im,0,0,W,H);im.src=initial;}
+  let color="#111827",size=5;
+  const cols=["#111827","#dc2626","#2563eb","#16a34a","#f59e0b","#7c3aed","#8b5a2b","#ffffff"];
+  bar.innerHTML=cols.map(c=>`<span class="dot ${c===color?"sel":""}" data-c="${c}" style="background:${c}" title="${c==="#ffffff"?"borrador":""}"></span>`).join("")+`<button class="btn sm" data-clear>🗑️ Borrar todo</button>`;
+  bar.querySelectorAll(".dot").forEach(d=>d.onclick=()=>{color=d.dataset.c;size=color==="#ffffff"?22:5;bar.querySelectorAll(".dot").forEach(x=>x.classList.toggle("sel",x===d));});
+  bar.querySelector("[data-clear]").onclick=()=>{ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);onSave("");};
+  let drawing=false,last=null;
+  const pos=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*W/r.width,(e.clientY-r.top)*H/r.height];};
+  cv.addEventListener("pointerdown",e=>{drawing=true;last=pos(e);cv.setPointerCapture(e.pointerId);ctx.beginPath();ctx.fillStyle=color;ctx.arc(last[0],last[1],size/2,0,7);ctx.fill();});
+  cv.addEventListener("pointermove",e=>{if(!drawing)return;const p=pos(e);ctx.strokeStyle=color;ctx.lineWidth=size;ctx.beginPath();ctx.moveTo(last[0],last[1]);ctx.lineTo(p[0],p[1]);ctx.stroke();last=p;});
+  const end=()=>{if(!drawing)return;drawing=false;
+    const s=document.createElement("canvas");s.width=420;s.height=252;s.getContext("2d").drawImage(cv,0,0,420,252);onSave(s.toDataURL("image/jpeg",0.6));};
+  cv.addEventListener("pointerup",end);cv.addEventListener("pointercancel",end);cv.addEventListener("pointerleave",end);
+}
+
+/* =========================================================
+   7) INICIO
+   ========================================================= */
+(async function(){
+  if(DEMO)$("#demo").style.display="block";
+  let first=true;
+  DB.watchCfg(async c=>{
+    CONF=c||{dias:{},roster:[]};
+    if(first){first=false;
+      let saved=null;try{saved=JSON.parse(localStorage.getItem("bm_me"))}catch(e){}
+      // abre en el día desbloqueado más alto
+      const open=DAYS.filter(d=>CONF.dias?.[d.n]).map(d=>d.n);DAY=open.length?Math.max(...open):1;
+      if(saved&&saved.slug){ME=saved;$("#app").innerHTML='<div class="locked">Cargando tu bitácora…</div>';await loadStudent();main();}
+      else login();
+    }else if(ME){ // un candado cambió: refrescar pestañas sin perder trabajo
+      const open=DAYS.filter(d=>CONF.dias?.[d.n]).map(d=>d.n);
+      if(!CONF.dias?.[DAY]&&open.length)DAY=Math.max(...open);
+      main();toast("El maestro actualizó los días disponibles");
+    }
+  });
+})();
+</script>
+</body>
+</html>
